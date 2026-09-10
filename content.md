@@ -48,13 +48,13 @@
 - Description : préparer la liste des villes, régions, frais, seuils de gratuité et délais.
 - Critères d'acceptation : les données éditoriales correspondent aux `ShippingZone` actifs et aux montants calculés au checkout.
 
-## CNT-007 - Assets et SEO
+## CNT-007 - Assets et fondations SEO
 
 - Priorité : `P1`
 - Statut : `TODO`
 - Dépendances : `CNT-002`, `CNT-003`
-- Description : optimiser logo, images, alt text, titres, descriptions, Open Graph, favicon, sitemap et robots.
-- Critères d'acceptation : aucune image critique ne casse; les pages principales ont des métadonnées uniques et des textes alternatifs utiles.
+- Description : préparer logo, images, alt text, titres, descriptions, Open Graph et favicon; les tickets détaillés sont dans [seo.md](seo.md).
+- Critères d'acceptation : aucune image critique ne casse; les pages principales ont des métadonnées uniques et des textes alternatifs utiles; `SEO-001` à `SEO-016` sont planifiés.
 
 ## CNT-008 - Validation éditoriale finale
 

@@ -79,3 +79,12 @@
 - Dépendances : tous les tickets `P0`
 - Description : exécuter une recette client, admin, support et technique sur desktop/mobile.
 - Critères d'acceptation : chaque exigence du cahier des charges et du PV est reliée à un résultat; les écarts sont documentés avant release.
+
+## QA-011 - Tests SEO et indexation
+
+- Priorité : `P0`
+- Statut : `TODO`
+- Dépendances : `SEO-005`, `SEO-006`, `SEO-012`
+- Description : automatiser le contrôle des status HTTP, canonical, hreflang, sitemap, robots, metadata, JSON-LD, liens cassés et budgets de performance.
+- Critères d'acceptation : la CI signale les pages sans metadata, les URLs privées présentes dans le sitemap, les alternates invalides, les liens cassés et les régressions de performance.
+ 

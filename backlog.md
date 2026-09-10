@@ -21,6 +21,7 @@
 | [client.md](client.md) | Parcours client, catalogue, panier, checkout, compte et support |
 | [qa-devops.md](qa-devops.md) | Tests, qualité, CI, Docker Compose, sécurité et déploiement |
 | [content.md](content.md) | Contenus storefront, données commerciales, légal et recette éditoriale |
+| [seo.md](seo.md) | SEO technique, marché marocain, français, darija, sitemap et mesure |
 
 ## Ordre recommandé
 
@@ -29,7 +30,8 @@
 3. Stabilisation du parcours client COD.
 4. Tests automatisés et CI.
 5. Docker Compose et déploiement.
-6. Paiement en ligne, reporting et améliorations P1/P2.
+6. SEO technique, sitemap, langues et performance.
+7. Paiement en ligne, reporting et améliorations P1/P2.
 
 ## Definition of Done globale
 
@@ -38,3 +40,4 @@
 - Les droits d'accès et les erreurs sont traités.
 - `npm run lint`, `npm run typecheck` et `npm run build` passent.
 - La documentation et les variables d'environnement nécessaires sont à jour.
+ 

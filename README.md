@@ -2,6 +2,26 @@ const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me
 
 # Base44 Project
 
+## Target stack migration
+
+The project is being migrated incrementally toward `pnpm`, Next.js, TypeScript,
+NestJS/Fastify, PostgreSQL/Drizzle, Redis/BullMQ, Vitest, Playwright and Docker
+Compose. The current Vite/Base44 storefront remains available during migration.
+
+The SEO delivery plan is in [seo.md](seo.md). It covers Morocco, French and
+Darija content, localized pages, canonical/hreflang metadata, sitemap, robots,
+structured data, Core Web Vitals and Search Console measurement.
+
+Copy `.env.example` to `.env`, set a local PostgreSQL password, then start the
+development services with:
+
+```bash
+docker compose up -d
+```
+
+Do not expose PostgreSQL or Redis publicly on the Hostinger VPS. They should be
+reachable only by the application containers or localhost through a firewall.
+
 Use this repository to run and edit the app locally, then publish changes back through db.
 
 Any change pushed to the repo will also be reflected in the Base44 Builder.
@@ -10,7 +30,7 @@ Any change pushed to the repo will also be reflected in the Base44 Builder.
 
 1. Clone the repository using the project's Git URL.
 2. Navigate to the project directory.
-3. Install dependencies: `npm install`.
+3. Install dependencies: `pnpm install` (use `npm install` only for the current Base44 compatibility workflow).
 4. Install the Base44 CLI: `npm install -g base44@latest`.
 
 See the [Base44 CLI docs](https://docs.db.com/developers/references/cli/get-started/overview) if you want to run Base44 commands directly.

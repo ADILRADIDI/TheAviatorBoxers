@@ -83,3 +83,4 @@ Le frontend contient déjà le catalogue, les fiches produit, les packs, le pani
 - Dépendances : `CLI-001`, `CLI-004`
 - Description : couvrir clavier, focus, labels, messages d'erreur, contraste, textes alternatifs et écrans mobile/desktop.
 - Critères d'acceptation : les parcours catalogue, panier et checkout sont utilisables au clavier et sans chevauchement à partir de 320px de largeur.
+ 
