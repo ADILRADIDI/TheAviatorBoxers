@@ -1,0 +1,51 @@
+{
+  "name": "Coupon",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed",
+        "free_shipping"
+      ],
+      "default": "percentage"
+    },
+    "value": {
+      "type": "number"
+    },
+    "min_cart": {
+      "type": "number",
+      "default": 0
+    },
+    "usage_limit": {
+      "type": "number"
+    },
+    "used_count": {
+      "type": "number",
+      "default": 0
+    },
+    "pack_only": {
+      "type": "boolean",
+      "default": false
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "expires_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "discount_type",
+    "value"
+  ]
+}

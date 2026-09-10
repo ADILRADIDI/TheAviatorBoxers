@@ -1,0 +1,92 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "string"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "neighborhood": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "shipping_fee": {
+      "type": "number"
+    },
+    "discount": {
+      "type": "number"
+    },
+    "total": {
+      "type": "number"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cod",
+        "online"
+      ],
+      "default": "cod"
+    },
+    "coupon_code": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "nouvelle",
+        "confirmee",
+        "preparation",
+        "expediee",
+        "livree",
+        "annulee",
+        "retour",
+        "echec"
+      ],
+      "default": "nouvelle"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "checkout",
+        "whatsapp"
+      ],
+      "default": "checkout"
+    }
+  },
+  "required": [
+    "first_name",
+    "last_name",
+    "phone",
+    "city",
+    "address",
+    "total"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "ShippingZone",
+  "type": "object",
+  "properties": {
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "fee": {
+      "type": "number"
+    },
+    "free_threshold": {
+      "type": "number"
+    },
+    "delivery_time": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "city",
+    "fee"
+  ]
+}
