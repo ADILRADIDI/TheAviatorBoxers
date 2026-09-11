@@ -1,7 +1,6 @@
 import { Truck, Package, RefreshCw, Banknote, MapPin, Clock } from "lucide-react";
 import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
-import Reveal from "@/components/storefront/Reveal";
 import { STORE } from "@/lib/store";
 
 export default function ShippingReturns() {

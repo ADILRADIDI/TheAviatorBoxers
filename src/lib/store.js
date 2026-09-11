@@ -1,4 +1,10 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+async function api(path, options) {
+  const response = await fetch(`${API_URL}${path}`, { headers: { "Content-Type": "application/json" }, ...options });
+  if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+  return response.json();
+}
 
 
 // ============================================================================
@@ -45,50 +51,48 @@ export const DEFAULT_SHIPPING = { fee: 35, delivery_time: "24-48h" };
 // ============================================================================
 
 export async function fetchProducts(filters = {}) {
-  const query = { status: "active", ...filters };
-  const items = await db.entities.Product.filter(query, "sort_order");
-  return items;
+  const items = await api("/api/products");
+  return items.filter((product) => Object.entries(filters).every(([key, value]) => product[key] === value));
 }
 
 export async function fetchProductBySlug(slug) {
-  const items = await db.entities.Product.filter({ slug, status: "active" });
-  return items[0] || null;
+  return api(`/api/products/${encodeURIComponent(slug)}`);
 }
 
 export async function fetchReviews(productId) {
-  const items = await db.entities.Review.filter({
-    product_id: productId,
-    status: "approved",
-  }, "-created_date");
-  return items;
+  return api(`/api/reviews?product_id=${encodeURIComponent(productId)}`);
+}
+
+export async function fetchShippingZone(city) {
+  if (!city) return null;
+  const items = await api(`/api/shipping-zones?city=${encodeURIComponent(city)}`);
+  return items[0] || null;
+}
+
+export async function fetchActivePromotion() {
+  return api("/api/promotions/active");
 }
 
 export async function fetchFeaturedReviews(limit = 6) {
-  const items = await db.entities.Review.filter(
-    { status: "approved" },
-    "-created_date",
-    limit,
-  );
-  return items;
+  const items = await api("/api/reviews");
+  return items.slice(0, limit);
 }
 
 export async function validateCoupon(code, cartSubtotal) {
-  const items = await db.entities.Coupon.filter({
-    code: (code || "").toUpperCase().trim(),
-    active: true,
-  });
-  const coupon = items[0];
-  if (!coupon) return { valid: false, message: "Code promo invalide." };
-  if (coupon.min_cart && cartSubtotal < coupon.min_cart) {
+  const result = await api(`/api/coupons/${encodeURIComponent((code || "").toUpperCase().trim())}`);
+  if (!result.valid) return { valid: false, message: "Code promo invalide." };
+  const resolvedCoupon = result.coupon;
+  if (resolvedCoupon.min_cart && cartSubtotal < resolvedCoupon.min_cart) {
     return {
       valid: false,
-      message: `Minimum d'achat: ${coupon.min_cart} ${STORE.currencySymbol}.`,
+      message: `Minimum d'achat: ${resolvedCoupon.min_cart} ${STORE.currencySymbol}.`,
     };
   }
-  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-    return { valid: false, message: "Ce code promo a expiré." };
-  }
-  return { valid: true, coupon };
+  return { valid: true, coupon: resolvedCoupon };
+}
+
+export async function createOrder(order) {
+  return api("/api/orders", { method: "POST", body: JSON.stringify(order) });
 }
 
 export function computeDiscount(coupon, subtotal, shippingFee) {

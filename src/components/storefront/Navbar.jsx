@@ -6,15 +6,13 @@ import { LogoLockup } from "./Logo";
 import { useCart } from "@/lib/cart-context";
 import { STORE } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/language";
 
-const NAV_LINKS = [
-  { label: "Collection", to: "/collection" },
-  { label: "Packs", to: "/packs" },
-  { label: "Qualité", to: "/qualite" },
-  { label: "À propos", to: "/a-propos" },
-  { label: "Avis", to: "/avis" },
-  { label: "Contact", to: "/contact" },
-];
+const NAV_LINKS = {
+  fr: ["Collection", "Packs", "Qualité", "À propos", "Contact"],
+  darija: ["المنتوجات", "الباكات", "الجودة", "علينا", "تواصل معنا"],
+};
+const NAV_PATHS = ["/collection", "/packs", "/qualite", "/a-propos", "/contact"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -22,6 +20,8 @@ export default function Navbar() {
   const { itemCount, openDrawer } = useCart();
   const location = useLocation();
   const reduce = useReducedMotion();
+  const { language, setLanguage } = useLanguage();
+  const navLinks = NAV_PATHS.map((to, index) => ({ to, label: NAV_LINKS[language][index] }));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -64,7 +64,7 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden lg:flex lg:items-center lg:gap-7">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -83,6 +83,10 @@ export default function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-1.5">
+            <div className="hidden items-center border border-border text-[10px] font-bold uppercase tracking-wider sm:flex" aria-label="Choisir la langue">
+              <button onClick={() => setLanguage("fr")} className={cn("px-2 py-1.5", language === "fr" ? "bg-navy text-white" : "text-muted-foreground")}>FR</button>
+              <button onClick={() => setLanguage("darija")} className={cn("px-2 py-1.5", language === "darija" ? "bg-navy text-white" : "text-muted-foreground")}>دارجة</button>
+            </div>
             <button
               onClick={() => {
                 window.location.href = "/collection?q=";
@@ -134,7 +138,7 @@ export default function Navbar() {
                 </button>
               </div>
               <div className="flex flex-col py-2">
-                {NAV_LINKS.map((link) => (
+                {navLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}

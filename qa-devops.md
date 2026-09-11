@@ -3,10 +3,12 @@
 ## QA-001 - Corriger le socle existant
 
 - Priorité : `P0`
-- Statut : `TODO`
+- Statut : `DOING`
 - Dépendances : aucune
 - Description : corriger les diagnostics ESLint/TypeScript et vérifier `AuthContext`, `Checkout` et les imports de pages.
 - Critères d'acceptation : `npm run lint`, `npm run typecheck` et `npm run build` passent sans nouvelle erreur.
+
+> Progression : lint, build, API, worker, migration Drizzle et smoke test API sont validés. Le typecheck racine reste bloqué par les types de plusieurs composants JSX JavaScript existants.
 
 ## QA-002 - Tests unitaires métier
 
@@ -43,18 +45,22 @@
 ## QA-006 - Docker frontend
 
 - Priorité : `P0`
-- Statut : `TODO`
+- Statut : `DONE`
 - Dépendances : `QA-001`
 - Description : créer un Dockerfile multi-stage pour construire Vite puis servir `dist` avec fallback SPA.
 - Critères d'acceptation : image légère, build reproductible, port configurable, healthcheck et routes React fonctionnelles après refresh.
 
+> Réalisé : `Dockerfile`, `nginx.conf` et `.dockerignore` ajoutés; le service frontend est intégré à Compose avec healthcheck et fallback SPA. Image construite avec succès et routes `/` et `/collection` validées par HTTP.
+
 ## QA-007 - Docker Compose
 
 - Priorité : `P0`
-- Statut : `TODO`
+- Statut : `DONE`
 - Dépendances : `QA-006`
 - Description : créer `docker-compose.yml`, `.dockerignore` et `.env.example`.
 - Critères d'acceptation : `docker compose config` passe; `docker compose up --build` démarre le frontend; les variables sont documentées et aucun secret réel n'est versionné.
+
+> Réalisé : PostgreSQL 16 et Redis 7 sont définis avec volumes persistants et healthchecks; la configuration Compose a été validée.
 
 ## QA-008 - Stratégie backend Compose
 

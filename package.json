@@ -6,9 +6,14 @@
   "packageManager": "pnpm@10.26.1",
   "scripts": {
     "dev": "vite",
+    "dev:api": "pnpm --filter @aviator/api dev",
+    "dev:worker": "pnpm --filter @aviator/worker dev",
     "build": "vite build",
+    "build:api": "pnpm --filter @aviator/api build",
+    "build:worker": "pnpm --filter @aviator/worker build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
+    "test": "pnpm --filter @aviator/api test",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
   },

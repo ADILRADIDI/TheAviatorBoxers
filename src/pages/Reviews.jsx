@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import StarRating from "@/components/storefront/StarRating";
@@ -5,6 +6,16 @@ import Reveal from "@/components/storefront/Reveal";
 import { useAsync } from "@/lib/useAsync";
 import { fetchFeaturedReviews } from "@/lib/store";
 import { Quote } from "lucide-react";
+
+async function createReview(payload) {
+  const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/reviews`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("review failed");
+  return response.json();
+}
 
 const FALLBACK = [
   { name: "Youssef E.", city: "Casablanca", rating: 5, comment: "La qualité est incroyable, le confort aussi. Je ne porte que Aviator maintenant." },
@@ -18,6 +29,24 @@ const FALLBACK = [
 export default function Reviews() {
   const { data: reviews, loading } = useAsync(() => fetchFeaturedReviews(12), []);
   const list = reviews && reviews.length > 0 ? reviews : FALLBACK;
+  const [form, setForm] = useState({ name: "", city: "", rating: 5, comment: "" });
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const submitReview = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    try {
+      await createReview({ ...form, rating: Number(form.rating) });
+      setForm({ name: "", city: "", rating: 5, comment: "" });
+      setMessage("Merci ! Votre avis sera publié après validation.");
+    } catch {
+      setMessage("Impossible d'envoyer votre avis pour le moment.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -53,6 +82,23 @@ export default function Reviews() {
             ))}
           </div>
         )}
+
+        <section className="mx-auto mt-14 max-w-2xl border border-border bg-secondary p-6 sm:p-8">
+          <h2 className="font-display text-2xl font-bold">Partager votre expérience</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Votre avis sera vérifié avant publication.</p>
+          <form onSubmit={submitReview} className="mt-6 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder="Votre nom" aria-label="Votre nom" />
+              <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder="Votre ville" aria-label="Votre ville" />
+            </div>
+            <select value={form.rating} onChange={(event) => setForm({ ...form, rating: event.target.value })} className="w-full border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" aria-label="Note">
+              {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} étoile{value > 1 ? "s" : ""}</option>)}
+            </select>
+            <textarea required minLength={10} rows={4} value={form.comment} onChange={(event) => setForm({ ...form, comment: event.target.value })} className="w-full border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder="Votre avis" aria-label="Votre avis" />
+            {message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
+            <button disabled={submitting} className="w-full bg-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50">{submitting ? "Envoi..." : "Envoyer mon avis"}</button>
+          </form>
+        </section>
       </div>
     </>
   );

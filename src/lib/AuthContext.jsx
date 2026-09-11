@@ -6,6 +6,33 @@ import { appParams } from '@/lib/app-params';
 
 const AuthContext = createContext();
 
+function createAxiosClient({ baseURL, headers = {}, token, interceptResponses = false }) {
+  const request = async (path) => {
+    const response = await fetch(`${baseURL}${path}`, {
+      headers: {
+        Accept: 'application/json',
+        ...headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+    if (!response.ok) {
+      const error = new Error(data?.message || `Request failed with status ${response.status}`);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+    return interceptResponses && data?.data ? data.data : data;
+  };
+
+  return { get: request };
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,6 +50,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
+
+      if (!appParams.appId) {
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        return;
+      }
       
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
@@ -71,10 +106,10 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
+          // A storefront visitor must still be able to browse and use guest checkout
+          // when the optional Base44 public-settings endpoint is unavailable.
+          setIsAuthenticated(false);
+          setAuthChecked(true);
         }
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);

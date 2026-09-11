@@ -6,12 +6,17 @@ import { STORE } from "@/lib/store";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [website, setWebsite] = useState("");
   const [sent, setSent] = useState(false);
 
   const submit = (e) => {
     e.preventDefault();
+    if (website.trim()) return;
+    const message = `Bonjour The Aviator,\n\nNom: ${form.name}\nEmail: ${form.email}\n\n${form.message}`;
+    window.open(`https://wa.me/${STORE.whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     setSent(true);
     setForm({ name: "", email: "", message: "" });
+    setWebsite("");
     setTimeout(() => setSent(false), 5000);
   };
 
@@ -78,6 +83,10 @@ export default function Contact() {
               </div>
             ) : (
               <form onSubmit={submit} className="mt-6 space-y-4">
+                <label className="absolute left-[-9999px] h-px w-px overflow-hidden" aria-hidden="true">
+                  Site web
+                  <input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom complet</span>
                   <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder="Votre nom" />

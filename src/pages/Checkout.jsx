@@ -1,12 +1,12 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Image } from "@/components/ui/image";
 import { Banknote, ShieldCheck, Lock, MessageCircle, Loader2 } from "lucide-react";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useCart, lineKey } from "@/lib/cart-context";
-import { formatPrice, STORE, computeDiscount, MOROCCAN_CITIES, DEFAULT_SHIPPING } from "@/lib/store";
+import { formatPrice, STORE, computeDiscount, MOROCCAN_CITIES, DEFAULT_SHIPPING, fetchShippingZone, createOrder } from "@/lib/store";
 
 import { buildWhatsAppMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { track, Events } from "@/lib/analytics";
@@ -22,16 +22,31 @@ export default function Checkout() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    first_name: "", last_name: "", phone: "", email: "",
-    city: "", address: "", neighborhood: "", notes: "",
+    name: "", phone: "", city: "", address: "",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [shippingZone, setShippingZone] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!form.city) {
+      setShippingZone(null);
+      return undefined;
+    }
+    setShippingLoading(true);
+    fetchShippingZone(form.city)
+      .then((zone) => active && setShippingZone(zone))
+      .catch(() => active && setShippingZone(null))
+      .finally(() => active && setShippingLoading(false));
+    return () => { active = false; };
+  }, [form.city]);
 
   const discountInfo = computeDiscount(coupon, subtotal, 0);
   const discount = discountInfo.amount;
   const freeShipping = subtotal - discount >= STORE.freeShippingThreshold || discountInfo.freeShipping;
-  const shippingFee = freeShipping ? 0 : DEFAULT_SHIPPING.fee;
+  const shippingFee = freeShipping ? 0 : shippingZone?.fee ?? DEFAULT_SHIPPING.fee;
   const total = subtotal - discount + shippingFee;
 
   const set = (field) => (e) => {
@@ -41,8 +56,7 @@ export default function Checkout() {
 
   const validate = () => {
     const e = {};
-    if (!form.first_name.trim()) e.first_name = "Prénom requis";
-    if (!form.last_name.trim()) e.last_name = "Nom requis";
+    if (!form.name.trim()) e.name = "Nom complet requis";
     if (!form.phone.trim()) e.phone = "Téléphone requis";
     else if (!validatePhone(form.phone)) e.phone = "Numéro marocain invalide (06/07)";
     if (!form.city) e.city = "Ville requise";
@@ -64,12 +78,16 @@ export default function Checkout() {
     track(Events.BEGIN_CHECKOUT, { value: total, currency: "MAD" });
     try {
       const orderItems = items.map((i) => ({
-        name: i.name, color: i.color, size: i.size,
+        product_id: i.productId, name: i.name, color: i.color, size: i.size,
         quantity: i.quantity, price: i.price,
       }));
 
-      const order = await db.entities.Order.create({
-        ...form,
+      const orderPayload = {
+        first_name: form.name.trim(),
+        last_name: "",
+        phone: form.phone,
+        city: form.city,
+        address: form.address,
         items: orderItems,
         subtotal,
         shipping_fee: shippingFee,
@@ -79,14 +97,14 @@ export default function Checkout() {
         coupon_code: coupon?.code || "",
         status: "nouvelle",
         source: "checkout",
-      });
+      };
+      const order = await createOrder(orderPayload);
 
       track(Events.PURCHASE, { value: total, currency: "MAD", order_id: order.id });
 
       const orderData = {
         id: order.id,
-        first_name: form.first_name,
-        last_name: form.last_name,
+        first_name: form.name,
         phone: form.phone,
         city: form.city,
         items: orderItems,
@@ -147,25 +165,15 @@ export default function Checkout() {
               <div className="border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{errors.form}</div>
             )}
 
-            {/* Coordonnées */}
+            {/* Informations essentielles */}
             <fieldset className="space-y-4">
-              <legend className="font-display text-lg font-bold">Vos coordonnées</legend>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Prénom" error={errors.first_name} required>
-                  <input value={form.first_name} onChange={set("first_name")} className={inputCls(!!errors.first_name)} placeholder="Ahmed" data-error={!!errors.first_name} />
-                </Field>
-                <Field label="Nom" error={errors.last_name} required>
-                  <input value={form.last_name} onChange={set("last_name")} className={inputCls(!!errors.last_name)} placeholder="Benani" data-error={!!errors.last_name} />
-                </Field>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Téléphone" error={errors.phone} required>
-                  <input value={form.phone} onChange={set("phone")} type="tel" className={inputCls(!!errors.phone)} placeholder="06 12 34 56 78" data-error={!!errors.phone} />
-                </Field>
-                <Field label="Email (optionnel)">
-                  <input value={form.email} onChange={set("email")} type="email" className={inputCls(false)} placeholder="exemple@email.com" />
-                </Field>
-              </div>
+              <legend className="font-display text-lg font-bold">Informations de livraison</legend>
+              <Field label="Nom complet" error={errors.name} required>
+                <input value={form.name} onChange={set("name")} className={inputCls(!!errors.name)} placeholder="Ahmed Benani" data-error={!!errors.name} autoComplete="name" />
+              </Field>
+              <Field label="Téléphone" error={errors.phone} required>
+                <input value={form.phone} onChange={set("phone")} type="tel" className={inputCls(!!errors.phone)} placeholder="06 12 34 56 78" data-error={!!errors.phone} autoComplete="tel" />
+              </Field>
             </fieldset>
 
             {/* Livraison */}
@@ -180,14 +188,6 @@ export default function Checkout() {
               <Field label="Adresse" error={errors.address} required>
                 <input value={form.address} onChange={set("address")} className={inputCls(!!errors.address)} placeholder="N°, rue, imm." data-error={!!errors.address} />
               </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Quartier (optionnel)">
-                  <input value={form.neighborhood} onChange={set("neighborhood")} className={inputCls(false)} placeholder="Quartier" />
-                </Field>
-                <Field label="Notes (optionnel)">
-                  <input value={form.notes} onChange={set("notes")} className={inputCls(false)} placeholder="Instructions de livraison" />
-                </Field>
-              </div>
             </fieldset>
 
             {/* Paiement */}
@@ -234,7 +234,7 @@ export default function Checkout() {
               <div className="mt-5 space-y-2 border-t border-border pt-4">
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Sous-total</span><span>{formatPrice(subtotal)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-sm text-accent-lime"><span>Réduction</span><span>-{formatPrice(discount)}</span></div>}
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Livraison</span><span>{shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Livraison</span><span>{shippingLoading ? "Calcul..." : shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}</span></div>
                 <div className="flex justify-between border-t border-border pt-3 text-lg font-bold"><span>Total</span><span>{formatPrice(total)}</span></div>
               </div>
 

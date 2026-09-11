@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Image } from "@/components/ui/image";
-import { Check, Plus, ArrowRight, X, ShoppingBag } from "lucide-react";
+import { Check, Plus, X, ShoppingBag } from "lucide-react";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useAsync } from "@/lib/useAsync";
 import { fetchProducts, formatPrice, SIZES } from "@/lib/store";
@@ -58,6 +58,7 @@ export default function Packs() {
         color: s.product.color_name,
         size: s.size,
         quantity: 1,
+        stock: s.product.stock,
         category: "boxer",
       });
     });
@@ -110,11 +111,12 @@ export default function Packs() {
                     <button
                       key={p.id}
                       onClick={() => selectProduct(p)}
-                      disabled={selected || filledCount >= PACK_SIZE}
+                      disabled={selected || filledCount >= PACK_SIZE || p.stock === 0}
                       className={cn(
                         "group relative aspect-[3/4] overflow-hidden border-2 bg-muted transition-all",
                         selected ? "border-accent-lime opacity-50" : "border-transparent hover:border-navy",
                         filledCount >= PACK_SIZE && !selected && "opacity-40",
+                        p.stock === 0 && "cursor-not-allowed opacity-50",
                       )}
                     >
                       {p.images?.[0] && <Image src={p.images[0]} alt={p.name} fittingType="fill" className="h-full w-full object-cover" />}
@@ -129,7 +131,7 @@ export default function Packs() {
                           </span>
                         </div>
                       )}
-                      {!selected && filledCount < PACK_SIZE && (
+                      {!selected && filledCount < PACK_SIZE && p.stock > 0 && (
                         <div className="absolute inset-0 flex items-center justify-center bg-navy/0 opacity-0 transition-all group-hover:bg-navy/20 group-hover:opacity-100">
                           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-navy">
                             <Plus className="h-5 w-5" />

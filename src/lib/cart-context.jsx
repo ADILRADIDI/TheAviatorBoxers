@@ -8,7 +8,13 @@ const COUPON_KEY = "aviator_coupon_v1";
 function loadCart() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => item && item.productId && Number(item.price) >= 0)
+      .map((item) => ({
+        ...item,
+        quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
+      }));
   } catch {
     return [];
   }
@@ -45,12 +51,16 @@ export function CartProvider({ children }) {
     setItems((prev) => {
       const key = lineKey(item);
       const existing = prev.find((p) => lineKey(p) === key);
+      const stock = Number.isFinite(Number(item.stock)) ? Math.max(0, Number(item.stock)) : Infinity;
+      if (stock === 0) return prev;
+      const requested = Math.max(1, Math.floor(Number(item.quantity) || 1));
       if (existing) {
+        const nextQuantity = Math.min(stock, existing.quantity + requested);
         return prev.map((p) =>
-          lineKey(p) === key ? { ...p, quantity: p.quantity + (item.quantity || 1) } : p,
+          lineKey(p) === key ? { ...p, quantity: nextQuantity, stock } : p,
         );
       }
-      return [...prev, { ...item, quantity: item.quantity || 1, key }];
+      return [...prev, { ...item, quantity: Math.min(stock, requested), key, stock }];
     });
     setDrawerOpen(true);
     track(Events.ADD_TO_CART, { name: item.name, price: item.price, color: item.color, size: item.size });
@@ -63,7 +73,9 @@ export function CartProvider({ children }) {
   const updateQuantity = useCallback((key, quantity) => {
     setItems((prev) =>
       prev.map((p) =>
-        lineKey(p) === key ? { ...p, quantity: Math.max(1, quantity) } : p,
+        lineKey(p) === key
+          ? { ...p, quantity: Math.min(Number.isFinite(Number(p.stock)) ? Math.max(1, Number(p.stock)) : Infinity, Math.max(1, Math.floor(Number(quantity) || 1))) }
+          : p,
       ),
     );
   }, []);

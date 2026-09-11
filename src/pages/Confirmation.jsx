@@ -59,6 +59,15 @@ export default function Confirmation() {
             </div>
           )}
 
+          {!order && (
+            <div className="mt-8 border border-border bg-secondary p-6 text-center">
+              <p className="text-sm text-muted-foreground">Aucune commande récente à afficher.</p>
+              <Link to="/collection" className="mt-4 inline-flex bg-navy px-5 py-3 text-xs font-bold uppercase tracking-wider text-white">
+                Voir la collection
+              </Link>
+            </div>
+          )}
+
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <a
               href={`https://wa.me/${STORE.whatsappNumber}?text=${encodeURIComponent(waMessage)}`}
@@ -74,6 +83,7 @@ export default function Confirmation() {
             >
               <Home className="h-4 w-4" /> Retour à l'accueil
             </Link>
+            {order && <Link to="/suivi-commande" className="inline-flex items-center justify-center border border-border px-6 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-navy">Suivre ma commande</Link>}
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">

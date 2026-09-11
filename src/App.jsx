@@ -15,6 +15,7 @@ import Packs from '@/pages/Packs';
 import Cart from '@/pages/Cart';
 import Checkout from '@/pages/Checkout';
 import Confirmation from '@/pages/Confirmation';
+import OrderTracking from '@/pages/OrderTracking';
 import About from '@/pages/About';
 import Quality from '@/pages/Quality';
 import Reviews from '@/pages/Reviews';
@@ -24,6 +25,7 @@ import SizeGuide from '@/pages/SizeGuide';
 import Payment from '@/pages/Payment';
 import FAQ from '@/pages/FAQ';
 import Legal from '@/pages/Legal';
+import Admin from '@/pages/Admin';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -53,6 +55,7 @@ const AuthenticatedApp = () => {
   return (
     <CartProvider>
       <Routes>
+        <Route path="/admin" element={<Admin />} />
         <Route element={<StoreLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/collection" element={<Collection />} />
@@ -61,6 +64,7 @@ const AuthenticatedApp = () => {
           <Route path="/panier" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/confirmation" element={<Confirmation />} />
+          <Route path="/suivi-commande" element={<OrderTracking />} />
           <Route path="/a-propos" element={<About />} />
           <Route path="/qualite" element={<Quality />} />
           <Route path="/avis" element={<Reviews />} />

@@ -1,7 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Image } from "@/components/ui/image";
 import { IMAGES } from "@/lib/assets";
-import { STORE } from "@/lib/store";
 
 export default function BrandStory() {
   const reduce = useReducedMotion();

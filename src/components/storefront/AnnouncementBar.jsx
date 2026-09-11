@@ -1,24 +1,32 @@
 import { useEffect, useState } from "react";
 import { Truck, Banknote, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/language";
 
-const MESSAGES = [
-  { icon: Truck, text: "Livraison partout au Maroc — 24-48h" },
-  { icon: Banknote, text: "Paiement à la livraison (COD)" },
-  { icon: ShieldCheck, text: "Tissu premium 95% coton / 5% Lycra" },
-];
+const MESSAGES = {
+  fr: [
+    { icon: Truck, text: "Livraison partout au Maroc — 24-48h" },
+    { icon: Banknote, text: "Paiement à la livraison (COD)" },
+    { icon: ShieldCheck, text: "Tissu premium 95% coton / 5% Lycra" },
+  ],
+  darija: [
+    { icon: Truck, text: "التوصيل فالمغرب كامل — 24 حتى 48 ساعة" },
+    { icon: Banknote, text: "خلص ملي يوصلك الطلب" },
+    { icon: ShieldCheck, text: "ثوب بريميوم 95% قطن / 5% ليكرا" },
+  ],
+};
 
 export default function AnnouncementBar() {
   const [index, setIndex] = useState(0);
+  const { language } = useLanguage();
 
   useEffect(() => {
     const id = setInterval(() => {
-      setIndex((i) => (i + 1) % MESSAGES.length);
+      setIndex((i) => (i + 1) % MESSAGES.fr.length);
     }, 4000);
     return () => clearInterval(id);
   }, []);
 
-  const current = MESSAGES[index];
+  const current = (MESSAGES[language] || MESSAGES.fr)[index] || MESSAGES.fr[0];
   const Icon = current.icon;
 
   return (

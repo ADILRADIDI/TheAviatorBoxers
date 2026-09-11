@@ -6,7 +6,7 @@ import { useAsync } from "@/lib/useAsync";
 import { fetchProducts } from "@/lib/store";
 
 export default function FeaturedCollection() {
-  const { data: products, loading, error } = useAsync(() => fetchProducts({ featured: true }), []);
+  const { data: products, loading, error } = useAsync(() => fetchProducts(), []);
 
   return (
     <section className="py-20 lg:py-28">

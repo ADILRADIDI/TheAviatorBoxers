@@ -5,7 +5,6 @@ import { Minus, Plus, X, ShoppingBag, ArrowRight, Tag, Truck } from "lucide-reac
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useCart, lineKey } from "@/lib/cart-context";
 import { formatPrice, STORE, validateCoupon, computeDiscount } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, subtotal, coupon, applyCoupon, removeCoupon } = useCart();

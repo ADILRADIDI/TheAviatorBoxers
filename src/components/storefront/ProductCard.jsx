@@ -5,7 +5,6 @@ import { ShoppingBag } from "lucide-react";
 import { formatPrice, discountPercent } from "@/lib/store";
 import { useCart } from "@/lib/cart-context";
 import StarRating from "./StarRating";
-import { cn } from "@/lib/utils";
 
 export default function ProductCard({ product, index = 0 }) {
   const reduce = useReducedMotion();
@@ -28,6 +27,7 @@ export default function ProductCard({ product, index = 0 }) {
       color: product.color_name,
       size: defaultSize,
       quantity: 1,
+      stock: product.stock,
       category: product.category,
     });
   };
@@ -39,7 +39,8 @@ export default function ProductCard({ product, index = 0 }) {
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5, delay: (index % 4) * 0.06, ease: [0.16, 1, 0.3, 1] }}
     >
-      <Link to={product.category === "pack" ? `/packs` : `/produit/${product.slug}`} className="group block">
+      <div className="group block">
+        <Link to={product.category === "pack" ? `/packs` : `/produit/${product.slug}`} className="block">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           {mainImage ? (
             <>
@@ -74,14 +75,6 @@ export default function ProductCard({ product, index = 0 }) {
             )}
           </div>
 
-          {/* Quick add */}
-          <button
-            onClick={quickAdd}
-            className="btn-shine absolute bottom-3 left-3 right-3 flex items-center justify-center gap-2 bg-white/95 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 translate-y-2 hover:bg-navy hover:text-white"
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            Ajout rapide
-          </button>
         </div>
 
         {/* Info */}
@@ -107,7 +100,17 @@ export default function ProductCard({ product, index = 0 }) {
             )}
           </div>
         </div>
-      </Link>
+        </Link>
+        <button
+          onClick={quickAdd}
+          disabled={product.stock === 0}
+          aria-label={product.stock === 0 ? `${product.name} indisponible` : `Ajouter ${product.name} au panier`}
+          className="btn-shine relative z-10 -mt-12 ml-3 mr-3 flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 bg-white/95 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-navy hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <ShoppingBag className="h-3.5 w-3.5" />
+          {product.stock === 0 ? "Rupture de stock" : "Ajout rapide"}
+        </button>
+      </div>
     </motion.div>
   );
 }
