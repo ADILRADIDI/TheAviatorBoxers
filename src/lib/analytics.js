@@ -9,6 +9,9 @@ export function track(event, properties = {}) {
   } catch {
     // Silently ignore — analytics should never break the UX
   }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("aviator-analytics", { detail: { event, properties } }));
+  }
 }
 
 export const Events = {

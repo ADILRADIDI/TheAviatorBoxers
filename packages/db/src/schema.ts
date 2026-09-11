@@ -1,4 +1,48 @@
-import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+
+export const roles = pgTable("admin_roles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const permissions = pgTable("admin_permissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  key: text("key").notNull().unique(),
+  module: text("module").notNull(),
+  label: text("label").notNull(),
+});
+
+export const rolePermissions = pgTable("admin_role_permissions", {
+  roleId: uuid("role_id").notNull().references(() => roles.id),
+  permissionId: uuid("permission_id").notNull().references(() => permissions.id),
+}, (table) => ({ pk: primaryKey({ columns: [table.roleId, table.permissionId] }) }));
+
+export const adminUsers = pgTable("admin_users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name").notNull(),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const adminUserRoles = pgTable("admin_user_roles", {
+  userId: uuid("user_id").notNull().references(() => adminUsers.id),
+  roleId: uuid("role_id").notNull().references(() => roles.id),
+}, (table) => ({ pk: primaryKey({ columns: [table.userId, table.roleId] }) }));
+
+export const adminSessions = pgTable("admin_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => adminUsers.id),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -50,10 +94,12 @@ export const coupons = pgTable("coupons", {
   code: text("code").notNull().unique(),
   discountType: text("discount_type").notNull(),
   value: integer("value").notNull(),
+  maxDiscount: integer("max_discount_cents"),
   minCart: integer("min_cart_cents").notNull().default(0),
   usageLimit: integer("usage_limit"),
   usedCount: integer("used_count").notNull().default(0),
   packOnly: boolean("pack_only").notNull().default(false),
+  productIds: jsonb("product_ids").notNull().default([]),
   active: boolean("active").notNull().default(true),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
 });
@@ -97,6 +143,7 @@ export const promotions = pgTable("promotions", {
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderNumber: text("order_number").notNull().unique(),
+  idempotencyKey: text("idempotency_key").notNull().unique(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   phone: text("phone").notNull(),
@@ -113,5 +160,68 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method").notNull().default("cod"),
   couponCode: text("coupon_code"),
   status: text("status").notNull().default("nouvelle"),
+  stockRestored: boolean("stock_restored").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  actor: text("actor").notNull(),
+  actorUserId: uuid("actor_user_id").references(() => adminUsers.id),
+  action: text("action").notNull(),
+  entity: text("entity").notNull(),
+  entityId: text("entity_id"),
+  metadata: jsonb("metadata"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  permission: text("permission"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const returnRequests = pgTable("return_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => orders.id),
+  phone: text("phone").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("requested"),
+  stockRestored: boolean("stock_restored").notNull().default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const cmsPages = pgTable("cms_pages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  titleFr: text("title_fr").notNull(),
+  titleDarija: text("title_darija"),
+  contentFr: text("content_fr").notNull().default(""),
+  contentDarija: text("content_darija").notNull().default(""),
+  status: text("status").notNull().default("draft"),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  canonicalUrl: text("canonical_url"),
+  mediaUrl: text("media_url"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const mediaAssets = pgTable("media_assets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  filename: text("filename").notNull().unique(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  url: text("url").notNull(),
+  altText: text("alt_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

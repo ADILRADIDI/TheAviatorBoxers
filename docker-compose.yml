@@ -7,11 +7,14 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-aviator}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-aviator}
       API_PORT: 3001
+      MEDIA_ROOT: /var/lib/aviator/media
     ports:
       - "${API_PORT:-3001}:3001"
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - media_data:/var/lib/aviator/media
 
   frontend:
     build:
@@ -63,3 +66,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  media_data:

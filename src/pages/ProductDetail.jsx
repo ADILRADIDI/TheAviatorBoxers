@@ -18,7 +18,7 @@ export default function ProductDetail() {
   const { data: product, loading, error } = useAsync(() => fetchProductBySlug(slug), [slug]);
   const { data: allProducts } = useAsync(() => fetchProducts(), []);
   const { data: reviews } = useAsync(() => (product ? fetchReviews(product.id) : Promise.resolve([])), [product?.id]);
-  const { addItem, openDrawer } = useCart();
+  const { addItem } = useCart();
 
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState("");
@@ -51,6 +51,11 @@ export default function ProductDetail() {
   const currentImage = images[activeImg] || images[0];
   const productSizes = product.sizes?.length ? product.sizes : SIZES;
   const percentage = discountPercent(product.price, product.compare_at_price);
+  const tabContent = tab === 0
+    ? product.description || product.short_description
+    : tab === 1
+      ? "Confection soigneuse avec des matières sélectionnées pour un confort quotidien et une tenue durable."
+      : "Livraison partout au Maroc en 24 à 48 heures. Paiement à la livraison disponible.";
   const addToCart = () => {
     addItem({
       productId: product.id,
@@ -68,6 +73,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Product", name: product.name, image: product.images || [], offers: { "@type": "Offer", priceCurrency: "MAD", price: product.price, availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" } }) }} />
       <AnnouncementBar />
       <main className="container-edge py-8 md:py-14">
         <div className="grid gap-10 lg:grid-cols-2">
@@ -140,7 +146,7 @@ export default function ProductDetail() {
 
         <div className="mt-16 border-t border-border pt-8">
           <div className="flex gap-6 border-b border-border">{TABS.map((label, index) => <button key={label} onClick={() => setTab(index)} className={cn("pb-3 text-sm", tab === index ? "border-b-2 border-navy font-semibold text-navy" : "text-muted-foreground")}>{label}</button>)}</div>
-          <p className="max-w-3xl py-6 leading-relaxed text-muted-foreground">{tab === 0 ? product.description || product.short_description : tab === 1 ? "Confection soigneuse avec des matières sélectionnées pour un confort quotidien et une tenue durable." : "Livraison partout au Maroc en 24 à 48 heures. Paiement à la livraison disponible."}</p>
+          <p className="max-w-3xl py-6 leading-relaxed text-muted-foreground">{tabContent}</p>
           {reviews?.length > 0 && <div className="border-t border-border pt-6"><h2 className="font-display text-xl font-bold text-navy">Avis clients</h2><div className="mt-4 grid gap-4 md:grid-cols-2">{reviews.slice(0, 4).map((review) => <div key={review.id} className="border border-border p-4"><StarRating value={review.rating} /><p className="mt-2 text-sm text-muted-foreground">{review.comment}</p></div>)}</div></div>}
         </div>
 

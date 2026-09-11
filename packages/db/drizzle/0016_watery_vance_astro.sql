@@ -1,0 +1,1 @@
+ALTER TABLE "cms_pages" ADD COLUMN "media_url" text;

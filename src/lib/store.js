@@ -78,9 +78,11 @@ export async function fetchFeaturedReviews(limit = 6) {
   return items.slice(0, limit);
 }
 
-export async function validateCoupon(code, cartSubtotal) {
-  const result = await api(`/api/coupons/${encodeURIComponent((code || "").toUpperCase().trim())}`);
-  if (!result.valid) return { valid: false, message: "Code promo invalide." };
+export async function validateCoupon(code, cartSubtotal, items = []) {
+  const hasPack = items.some((item) => item.category === "pack" || item.slug?.includes("pack") || item.name?.toLowerCase().includes("pack"));
+  const productIds = items.map((item) => item.productId).filter(Boolean).join(",");
+  const result = await api(`/api/coupons/${encodeURIComponent((code || "").toUpperCase().trim())}?has_pack=${hasPack}&product_ids=${encodeURIComponent(productIds)}`);
+  if (!result.valid) return { valid: false, message: result.message || "Code promo invalide." };
   const resolvedCoupon = result.coupon;
   if (resolvedCoupon.min_cart && cartSubtotal < resolvedCoupon.min_cart) {
     return {
@@ -98,10 +100,12 @@ export async function createOrder(order) {
 export function computeDiscount(coupon, subtotal, shippingFee) {
   if (!coupon) return { amount: 0, freeShipping: false };
   if (coupon.discount_type === "percentage") {
-    return { amount: Math.round((subtotal * coupon.value) / 100), freeShipping: false };
+    const amount = Math.round((subtotal * coupon.value) / 100);
+    return { amount: coupon.max_discount ? Math.min(amount, coupon.max_discount) : amount, freeShipping: false };
   }
   if (coupon.discount_type === "fixed") {
-    return { amount: Math.min(coupon.value, subtotal), freeShipping: false };
+    const amount = Math.min(coupon.value, subtotal);
+    return { amount: coupon.max_discount ? Math.min(amount, coupon.max_discount) : amount, freeShipping: false };
   }
   if (coupon.discount_type === "free_shipping") {
     return { amount: 0, freeShipping: true };

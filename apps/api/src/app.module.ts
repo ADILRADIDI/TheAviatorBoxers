@@ -1,25 +1,195 @@
-import { Body, Controller, Delete, Get, Module, Param, Patch, Post, Query } from "@nestjs/common";
-import { createDatabase } from "@aviator/db";
+import { adminSessions, adminUserRoles, adminUsers, auditLogs, categories, cmsPages, coupons, createDatabase, mediaAssets, notifications, orders, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones } from "@aviator/db";
+import { createWriteStream, mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { pipeline } from "node:stream/promises";
+import { join } from "node:path";
+import * as XLSX from "xlsx";
+import { Body, Controller, Delete, Get, Module, Param, Patch, Post, Query, Req, Res } from "@nestjs/common";
 import { eq, sql } from "drizzle-orm";
-import { categories, coupons, orders, productVariants, products, promotions, reviews, shippingZones } from "@aviator/db";
 import { healthResponse } from "./health.js";
-import { createAdminToken } from "./admin-auth.js";
+import { createSessionToken, hashPassword, hashSessionToken, verifyPassword } from "./admin-auth.js";
+import { auditContext } from "./audit-context.js";
+import { metricsText } from "./metrics.js";
 
 const { db } = createDatabase(process.env.DATABASE_URL);
+const mediaRoot = process.env.MEDIA_ROOT || join(process.cwd(), "storage", "media");
+mkdirSync(mediaRoot, { recursive: true });
+const csvEscape = (value: unknown) => {
+  const normalized = value !== null && typeof value === "object" ? JSON.stringify(value) : value;
+  return `"${String(normalized ?? "").replaceAll('"', '""')}"`;
+};
+
+function listPage<T extends Record<string, any>>(rows: T[], query: { page?: string; limit?: string; search?: string; status?: string; city?: string; module?: string }) {
+  const page = Math.max(1, Number(query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+  const search = query.search?.trim().toLowerCase();
+  const filtered = rows.filter((row) => (!search || JSON.stringify(row).toLowerCase().includes(search)) && (!query.status || row.status === query.status) && (!query.city || row.city === query.city) && (!query.module || row.module === query.module));
+  return { data: filtered.slice((page - 1) * limit, page * limit), page, limit, total: filtered.length, pages: Math.max(1, Math.ceil(filtered.length / limit)) };
+}
+
+async function audit(action: string, entity: string, entityId: string, metadata: unknown = {}) {
+  const context = auditContext.getStore();
+  await db.insert(auditLogs).values({ actor: context?.actor || "system", actorUserId: context?.userId, action, entity, entityId, metadata, ipAddress: context?.ipAddress, userAgent: context?.userAgent, permission: context?.permission });
+}
+
+async function notify(type: string, title: string, message: string) {
+  await db.insert(notifications).values({ type, title, message });
+}
 
 @Controller()
 class AppController {
   @Post("api/admin/login")
-  adminLogin(@Body() body: { email?: string; password?: string }) {
-    const email = process.env.ADMIN_EMAIL || "admin@theaviator.local";
-    const password = process.env.ADMIN_PASSWORD || "change-me-admin";
-    if (body.email !== email || body.password !== password) return { authenticated: false };
-    return { authenticated: true, token: createAdminToken(email), name: "Administrateur The Aviator" };
+  async adminLogin(@Body() body: { email?: string; password?: string }) {
+    const [user] = body.email ? await db.select().from(adminUsers).where(eq(adminUsers.email, body.email.toLowerCase().trim())) : [];
+    if (!user?.active || !body.password || !(await verifyPassword(body.password, user.passwordHash))) {
+      await db.insert(auditLogs).values({ actor: body.email || "unknown", action: "admin.login.failed", entity: "admin_session", metadata: { email: body.email } });
+      return { authenticated: false };
+    }
+    const token = createSessionToken();
+    await db.insert(adminSessions).values({ userId: user.id, tokenHash: hashSessionToken(token), expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000) });
+    const assignments = await db.select().from(adminUserRoles).where(eq(adminUserRoles.userId, user.id));
+    const roleIds = assignments.map((assignment) => assignment.roleId);
+    const rolePermissionRows = roleIds.length ? await db.select().from(rolePermissions).where(sql`${rolePermissions.roleId} IN (${sql.join(roleIds.map((id) => sql`${id}`), sql`, `)})`) : [];
+    const permissionIds = rolePermissionRows.map((assignment) => assignment.permissionId);
+    const effectivePermissions = permissionIds.length ? await db.select({ key: permissions.key }).from(permissions).where(sql`${permissions.id} IN (${sql.join(permissionIds.map((id) => sql`${id}`), sql`, `)})`) : [];
+    await db.insert(auditLogs).values({ actor: user.email, actorUserId: user.id, action: "admin.login.succeeded", entity: "admin_session", entityId: user.id, metadata: { permissions: effectivePermissions.length } });
+    return { authenticated: true, token, name: user.name, user_id: user.id, permissions: effectivePermissions.map((permission) => permission.key) };
+  }
+
+  @Post("api/admin/logout")
+  async adminLogout(@Body() body: { token?: string }) {
+    if (body.token) await db.update(adminSessions).set({ revokedAt: new Date() }).where(eq(adminSessions.tokenHash, hashSessionToken(body.token)));
+    await audit("admin.logout", "admin_session", "current");
+    return { ok: true };
+  }
+
+  @Get("api/admin/roles")
+  async adminRoles() {
+    const roleRows = await db.select().from(roles).orderBy(roles.name);
+    const permissionRows = await db.select().from(permissions).orderBy(permissions.module, permissions.key);
+    const assignments = await db.select().from(rolePermissions);
+    return roleRows.map((role) => ({ ...role, permissions: assignments.filter((item) => item.roleId === role.id).map((item) => permissionRows.find((permission) => permission.id === item.permissionId)).filter(Boolean), all_permissions: permissionRows }));
+  }
+
+  @Post("api/admin/roles")
+  async createRole(@Body() body: { name: string; description?: string; permission_ids?: string[] }) {
+    const [role] = await db.insert(roles).values({ name: body.name.trim().toUpperCase(), description: body.description }).returning();
+    if (Array.isArray(body.permission_ids) && body.permission_ids.length) await db.insert(rolePermissions).values(body.permission_ids.map((permissionId) => ({ roleId: role.id, permissionId })));
+    await audit("role.created", "role", role.id, { name: role.name });
+    return role;
+  }
+
+  @Patch("api/admin/roles/:id")
+  async updateRole(@Param("id") id: string, @Body() body: { name?: string; description?: string; permission_ids?: string[] }) {
+    const [role] = await db.update(roles).set({ name: body.name?.trim().toUpperCase(), description: body.description }).where(eq(roles.id, id)).returning();
+    if (Array.isArray(body.permission_ids)) {
+      await db.delete(rolePermissions).where(eq(rolePermissions.roleId, id));
+      if (body.permission_ids.length) await db.insert(rolePermissions).values(body.permission_ids.map((permissionId) => ({ roleId: id, permissionId })));
+    }
+    await audit("role.updated", "role", id, { name: role?.name });
+    return role;
+  }
+
+  @Delete("api/admin/roles/:id")
+  async deleteRole(@Param("id") id: string) { await db.delete(rolePermissions).where(eq(rolePermissions.roleId, id)); await db.delete(roles).where(eq(roles.id, id)); await audit("role.deleted", "role", id); return { ok: true }; }
+
+  @Get("api/admin/permissions")
+  async adminPermissions() { return db.select().from(permissions).orderBy(permissions.module, permissions.key); }
+
+  @Get("api/admin/users")
+  async adminUsersList() {
+    const users = await db.select({ id: adminUsers.id, email: adminUsers.email, name: adminUsers.name, active: adminUsers.active, createdAt: adminUsers.createdAt }).from(adminUsers).orderBy(adminUsers.email);
+    const assignments = await db.select().from(adminUserRoles);
+    const roleRows = await db.select().from(roles);
+    return users.map((user) => ({ ...user, roles: assignments.filter((item) => item.userId === user.id).map((item) => roleRows.find((role) => role.id === item.roleId)).filter(Boolean) }));
+  }
+
+  @Post("api/admin/users")
+  async createAdminUser(@Body() body: { email: string; name: string; password: string; role_id?: string }) {
+    if (!body.email || !body.name || !body.password || body.password.length < 12) throw new Error("PASSWORD_TOO_SHORT");
+    const [user] = await db.insert(adminUsers).values({ email: body.email.toLowerCase().trim(), name: body.name.trim(), passwordHash: await hashPassword(body.password) }).returning();
+    if (body.role_id) await db.insert(adminUserRoles).values({ userId: user.id, roleId: body.role_id });
+    await audit("admin_user.created", "admin_user", user.id, { email: user.email });
+    return { ...user, passwordHash: undefined };
+  }
+
+  @Patch("api/admin/users/:id")
+  async updateAdminUser(@Param("id") id: string, @Body() body: { name?: string; active?: boolean; password?: string; role_id?: string }) {
+    const values: any = { name: body.name, active: body.active };
+    if (body.password) { if (body.password.length < 12) throw new Error("PASSWORD_TOO_SHORT"); values.passwordHash = await hashPassword(body.password); }
+    const [user] = await db.update(adminUsers).set(values).where(eq(adminUsers.id, id)).returning();
+    if (body.role_id) { await db.delete(adminUserRoles).where(eq(adminUserRoles.userId, id)); await db.insert(adminUserRoles).values({ userId: id, roleId: body.role_id }); }
+    await audit("admin_user.updated", "admin_user", id, { active: body.active, role_id: body.role_id });
+    return { ...user, passwordHash: undefined };
+  }
+
+  @Delete("api/admin/users/:id")
+  async deleteAdminUser(@Param("id") id: string) {
+    const [user] = await db.select().from(adminUsers).where(eq(adminUsers.id, id));
+    const [superRole] = await db.select().from(roles).where(eq(roles.name, "SUPER_ADMIN"));
+    const assignments = superRole ? await db.select().from(adminUserRoles).where(eq(adminUserRoles.roleId, superRole.id)) : [];
+    if (superRole && assignments.length <= 1 && assignments.some((item) => item.userId === id)) throw new Error("LAST_SUPER_ADMIN");
+    await db.delete(adminUserRoles).where(eq(adminUserRoles.userId, id)); await db.delete(adminSessions).where(eq(adminSessions.userId, id)); await db.delete(adminUsers).where(eq(adminUsers.id, id));
+    await audit("admin_user.deleted", "admin_user", id, { email: user?.email });
+    return { ok: true };
+  }
+
+  @Get("api/admin/roles/:id/users")
+  async roleUsers(@Param("id") id: string) {
+    const assignments = await db.select().from(adminUserRoles).where(eq(adminUserRoles.roleId, id));
+    const users = await db.select({ id: adminUsers.id, email: adminUsers.email, name: adminUsers.name, active: adminUsers.active }).from(adminUsers);
+    return assignments.map((assignment) => users.find((user) => user.id === assignment.userId)).filter(Boolean);
   }
   @Get("health")
+    @Get("api/pages/:slug")
+    async publicPage(@Param("slug") slug: string) { const [page] = await db.select().from(cmsPages).where(sql`${cmsPages.slug} = ${slug} AND ${cmsPages.status} = 'published'`); return page || null; }
+
+    @Get("api/admin/cms/pages")
+    async cmsList(@Query() query: any) { return listPage(await db.select().from(cmsPages).orderBy(cmsPages.updatedAt), query); }
+
+    @Post("api/admin/cms/pages")
+    async cmsCreate(@Body() body: any) { const [page] = await db.insert(cmsPages).values({ slug: body.slug, titleFr: body.title_fr, titleDarija: body.title_darija, contentFr: body.content_fr || "", contentDarija: body.content_darija || "", status: body.status || "draft", seoTitle: body.seo_title, seoDescription: body.seo_description, canonicalUrl: body.canonical_url, mediaUrl: body.media_url, publishedAt: body.status === "published" ? new Date() : null }).returning(); await audit("cms.page.created", "cms_page", page.id, { slug: page.slug }); return page; }
+
+    @Patch("api/admin/cms/pages/:id")
+    async cmsUpdate(@Param("id") id: string, @Body() body: any) { const [page] = await db.update(cmsPages).set({ slug: body.slug, titleFr: body.title_fr, titleDarija: body.title_darija, contentFr: body.content_fr, contentDarija: body.content_darija, status: body.status, seoTitle: body.seo_title, seoDescription: body.seo_description, canonicalUrl: body.canonical_url, mediaUrl: body.media_url, publishedAt: body.status === "published" ? new Date() : null, updatedAt: new Date() }).where(eq(cmsPages.id, id)).returning(); await audit("cms.page.updated", "cms_page", id, { status: body.status }); return page; }
+
+    @Delete("api/admin/cms/pages/:id")
+    async cmsDelete(@Param("id") id: string) { await db.delete(cmsPages).where(eq(cmsPages.id, id)); await audit("cms.page.deleted", "cms_page", id); return { ok: true }; }
+
+    @Get("api/admin/media")
+    async mediaList(@Query() query: any) { return listPage(await db.select().from(mediaAssets).orderBy(mediaAssets.createdAt), query); }
+
+    @Post("api/admin/media")
+    async mediaUpload(@Req() request: any) {
+      const part = await request.file();
+      if (!part) throw new Error("MEDIA_FILE_REQUIRED");
+      const allowed = new Map([["image/jpeg", ".jpg"], ["image/png", ".png"], ["image/webp", ".webp"], ["image/gif", ".gif"]]);
+      const extension = allowed.get(part.mimetype);
+      if (!extension) throw new Error("MEDIA_TYPE_NOT_ALLOWED");
+      const filename = `${randomUUID()}${extension}`;
+      const destination = join(mediaRoot, filename);
+      await pipeline(part.file, createWriteStream(destination));
+      const stat = await import("node:fs/promises").then((fs) => fs.stat(destination));
+      if (stat.size > 5 * 1024 * 1024) { await import("node:fs/promises").then((fs) => fs.unlink(destination)); throw new Error("MEDIA_TOO_LARGE"); }
+      const [asset] = await db.insert(mediaAssets).values({ filename, originalName: part.filename, mimeType: part.mimetype, sizeBytes: stat.size, url: `/media/${filename}` }).returning();
+      await audit("media.uploaded", "media_asset", asset.id, { mimeType: part.mimetype, sizeBytes: stat.size });
+      return asset;
+    }
+
+    @Delete("api/admin/media/:id")
+    async mediaDelete(@Param("id") id: string) { const [asset] = await db.select().from(mediaAssets).where(eq(mediaAssets.id, id)); if (asset) await import("node:fs/promises").then((fs) => fs.unlink(join(mediaRoot, asset.filename)).catch(() => undefined)); await db.delete(mediaAssets).where(eq(mediaAssets.id, id)); await audit("media.deleted", "media_asset", id); return { ok: true }; }
+
+    @Get("media/:filename")
+    async mediaFile(@Param("filename") filename: string, @Res() response: any) { if (!/^[a-f0-9-]+\.(jpg|png|webp|gif)$/.test(filename)) return response.status(404).send({ message: "Not found" }); const asset = (await db.select().from(mediaAssets).where(eq(mediaAssets.filename, filename)))[0]; if (!asset) return response.status(404).send({ message: "Not found" }); return response.type(asset.mimeType).send((await import("node:fs")).createReadStream(join(mediaRoot, filename))); }
   health() {
     return healthResponse();
   }
+  
+  @Get("ready")
+  readiness() { return { status: "ready", service: "api" }; }
+  
+  @Get("metrics")
+  metrics(@Res() response: any) { return response.type("text/plain").send(metricsText()); }
 
   @Get("api/products")
   async productList() {
@@ -56,31 +226,77 @@ class AppController {
   @Post("api/reviews")
   async createReview(@Body() body: { name: string; city?: string; rating: number; comment: string; product_id?: string }) {
     const [row] = await db.insert(reviews).values({ name: body.name, city: body.city, rating: body.rating, comment: body.comment, productId: body.product_id, status: "pending", verified: false }).returning();
+    await notify("review.pending", "Nouvel avis à modérer", `${body.name} a envoyé un avis ${body.rating}/5.`);
     return row;
   }
 
   @Get("api/coupons/:code")
-  async coupon(@Param("code") code: string) {
+  async coupon(@Param("code") code: string, @Query("has_pack") hasPack?: string, @Query("product_ids") productIdsQuery?: string) {
     const rows = await db.select().from(coupons).where(eq(coupons.code, code.toUpperCase()));
     const row = rows[0];
-    if (!row || !row.active || (row.expiresAt && row.expiresAt < new Date()) || (row.usageLimit !== null && row.usedCount >= row.usageLimit)) return { valid: false };
-    return { valid: true, coupon: { ...row, min_cart: row.minCart / 100, discount_type: row.discountType, expires_at: row.expiresAt } };
+    const requestedProductIds = productIdsQuery?.split(",").filter(Boolean) || [];
+    const targetedProductIds = Array.isArray(row?.productIds) ? row.productIds.map(String) : [];
+    if (!row || !row.active || (row.expiresAt && row.expiresAt < new Date()) || (row.usageLimit !== null && row.usedCount >= row.usageLimit) || (row.packOnly && hasPack !== "true") || (targetedProductIds.length > 0 && requestedProductIds.some((id) => !targetedProductIds.includes(id)))) return { valid: false, message: row?.packOnly ? "Ce code est réservé aux packs." : "Ce code ne s'applique pas à ces produits." };
+    return { valid: true, coupon: { ...row, value: row.discountType === "fixed" ? row.value / 100 : row.value, min_cart: row.minCart / 100, max_discount: row.maxDiscount === null ? null : row.maxDiscount / 100, discount_type: row.discountType, pack_only: row.packOnly, product_ids: targetedProductIds, expires_at: row.expiresAt } };
   }
 
   @Post("api/orders")
   async createOrder(@Body() body: any) {
+    const idempotencyKey = String(body.idempotency_key || "").trim();
+    if (!idempotencyKey || idempotencyKey.length > 120) throw new Error("IDEMPOTENCY_KEY_REQUIRED");
+    const existingRows = await db.select().from(orders).where(eq(orders.idempotencyKey, idempotencyKey));
+    const existing = existingRows[0];
+    if (existing) return { ...existing, id: existing.id, order_number: existing.orderNumber, total: existing.total / 100, subtotal: existing.subtotal / 100, shipping_fee: existing.shippingFee / 100, discount: existing.discount / 100 };
     const orderNumber = `AVT-${Date.now().toString(36).toUpperCase()}`;
     const row = await db.transaction(async (transaction) => {
-      for (const item of body.items || []) {
-        if (!item.product_id) continue;
-        const updated = await transaction.update(products).set({ stock: sql`${products.stock} - ${Number(item.quantity || 0)}` }).where(sql`${products.id} = ${item.product_id} AND ${products.stock} >= ${Number(item.quantity || 0)}`).returning({ id: products.id });
+      const requestedItems = Array.isArray(body.items) ? body.items : [];
+      if (!requestedItems.length) throw new Error("EMPTY_ORDER");
+      const resolvedItems: Array<Record<string, unknown>> = [];
+      let subtotalCents = 0;
+      let containsPack = false;
+      for (const item of requestedItems) {
+        const quantity = Number(item.quantity || 0);
+        if (!item.product_id || !Number.isInteger(quantity) || quantity < 1) throw new Error("INVALID_ITEM");
+        const [product] = await transaction.select().from(products).where(eq(products.id, item.product_id));
+        if (!product) throw new Error("PRODUCT_UNAVAILABLE");
+        const variantRows = item.size && item.color
+          ? await transaction.select().from(productVariants).where(sql`${productVariants.productId} = ${item.product_id} AND ${productVariants.size} = ${item.size} AND ${productVariants.color} = ${item.color} AND ${productVariants.active} = true`)
+          : [];
+        if (variantRows.length) {
+          const updatedVariant = await transaction.update(productVariants).set({ stock: sql`${productVariants.stock} - ${quantity}` }).where(sql`${productVariants.id} = ${variantRows[0].id} AND ${productVariants.stock} >= ${quantity}`).returning({ id: productVariants.id });
+          if (!updatedVariant.length) throw new Error("VARIANT_STOCK_UNAVAILABLE");
+        }
+        const updated = await transaction.update(products).set({ stock: sql`${products.stock} - ${quantity}` }).where(sql`${products.id} = ${item.product_id} AND ${products.stock} >= ${quantity}`).returning({ id: products.id });
         if (!updated.length) throw new Error("STOCK_UNAVAILABLE");
+        const lineTotal = product.price * quantity;
+        subtotalCents += lineTotal;
+        containsPack ||= product.slug.includes("pack") || product.name.toLowerCase().includes("pack");
+        resolvedItems.push({ product_id: product.id, name: product.name, color: product.colorName, size: item.size, quantity, price: product.price / 100 });
       }
-      if (body.coupon_code) {
-        const updatedCoupons = await transaction.update(coupons).set({ usedCount: sql`${coupons.usedCount} + 1` }).where(sql`${coupons.code} = ${String(body.coupon_code).toUpperCase()} AND ${coupons.active} = true AND (${coupons.usageLimit} IS NULL OR ${coupons.usedCount} < ${coupons.usageLimit})`).returning({ id: coupons.id });
+
+      const [zone] = body.city ? await transaction.select().from(shippingZones).where(eq(shippingZones.city, body.city)) : [];
+      const discountCoupon = body.coupon_code ? String(body.coupon_code).trim().toUpperCase() : "";
+      let discountCents = 0;
+      let couponDiscountType = "";
+      if (discountCoupon) {
+        const [coupon] = await transaction.select().from(coupons).where(eq(coupons.code, discountCoupon));
+        const targetedProductIds = Array.isArray(coupon?.productIds) ? coupon.productIds.map(String) : [];
+        const orderProductIds = resolvedItems.map((item) => String(item.product_id));
+        if (!coupon || !coupon.active || (coupon.expiresAt && coupon.expiresAt < new Date()) || (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) || subtotalCents < coupon.minCart || (coupon.packOnly && !containsPack) || (targetedProductIds.length > 0 && orderProductIds.some((id) => !targetedProductIds.includes(id)))) throw new Error("COUPON_INVALID");
+        couponDiscountType = coupon.discountType;
+        if (coupon.discountType === "percentage") discountCents = Math.round((subtotalCents * coupon.value) / 100);
+        if (coupon.discountType === "fixed") discountCents = coupon.value;
+        if (coupon.maxDiscount !== null) discountCents = Math.min(discountCents, coupon.maxDiscount);
+        discountCents = Math.min(Math.max(0, discountCents), subtotalCents);
+        const updatedCoupons = await transaction.update(coupons).set({ usedCount: sql`${coupons.usedCount} + 1` }).where(sql`${coupons.id} = ${coupon.id} AND ${coupons.active} = true AND (${coupons.usageLimit} IS NULL OR ${coupons.usedCount} < ${coupons.usageLimit})`).returning({ id: coupons.id });
         if (!updatedCoupons.length) throw new Error("COUPON_UNAVAILABLE");
       }
-      const [created] = await transaction.insert(orders).values({ orderNumber, firstName: body.first_name, lastName: body.last_name, phone: body.phone, email: body.email, city: body.city, address: body.address, neighborhood: body.neighborhood, notes: body.notes, items: body.items, subtotal: Math.round(body.subtotal * 100), shippingFee: Math.round(body.shipping_fee * 100), discount: Math.round((body.discount || 0) * 100), total: Math.round(body.total * 100), paymentMethod: "cod", couponCode: body.coupon_code, status: "nouvelle" }).returning();
+      const netSubtotalCents = subtotalCents - discountCents;
+      const thresholdReached = zone?.freeThreshold !== null && zone?.freeThreshold !== undefined && netSubtotalCents >= zone.freeThreshold;
+      const shippingCents = couponDiscountType === "free_shipping" || thresholdReached ? 0 : zone?.fee ?? 3500;
+      const totalCents = Math.max(0, netSubtotalCents + shippingCents);
+      const [created] = await transaction.insert(orders).values({ orderNumber, idempotencyKey, firstName: body.first_name, lastName: body.last_name || "", phone: body.phone, email: body.email, city: body.city, address: body.address, neighborhood: body.neighborhood, notes: body.notes, items: resolvedItems, subtotal: subtotalCents, shippingFee: shippingCents, discount: discountCents, total: totalCents, paymentMethod: "cod", couponCode: discountCoupon || null, status: "nouvelle" }).returning();
+      await transaction.insert(notifications).values({ type: "order.created", title: "Nouvelle commande", message: `${created.orderNumber} · ${created.total / 100} DH` });
       return created;
     });
     return { ...row, id: row.id, order_number: row.orderNumber, total: row.total / 100, subtotal: row.subtotal / 100, shipping_fee: row.shippingFee / 100, discount: row.discount / 100 };
@@ -90,23 +306,99 @@ class AppController {
   async findOrder(@Param("orderNumber") orderNumber: string, @Query("phone") phone?: string) {
     const rows = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
     const row = rows[0];
-    if (!row || !phone || row.phone.replace(/[\s-]/g, "") !== phone.replace(/[\s-]/g, "")) return null;
-    return { ...row, order_number: row.orderNumber, total: row.total / 100, subtotal: row.subtotal / 100, shipping_fee: row.shippingFee / 100, discount: row.discount / 100 };
+    if (!row?.phone || !phone || row.phone.replace(/[\s-]/g, "") !== phone.replace(/[\s-]/g, "")) return null;
+    const returns = await db.select().from(returnRequests).where(eq(returnRequests.orderId, row.id));
+    return { ...row, order_number: row.orderNumber, total: row.total / 100, subtotal: row.subtotal / 100, shipping_fee: row.shippingFee / 100, discount: row.discount / 100, return_request: returns[0] || null };
+  }
+
+  @Post("api/returns")
+  async createReturn(@Body() body: { order_number: string; phone: string; reason: string; notes?: string }) {
+    const found = await db.select().from(orders).where(eq(orders.orderNumber, body.order_number));
+    const order = found[0];
+    if (!order?.phone || order.phone.replace(/[\s-]/g, "") !== body.phone.replace(/[\s-]/g, "") || order.status !== "livree") return { accepted: false };
+    const existing = await db.select().from(returnRequests).where(eq(returnRequests.orderId, order.id));
+    if (existing[0]) return { accepted: false, duplicate: true, request: existing[0] };
+    const [row] = await db.insert(returnRequests).values({ orderId: order.id, phone: body.phone, reason: body.reason, notes: body.notes }).returning();
+    await notify("return.requested", "Nouvelle demande de retour", `Commande ${order.orderNumber} · ${body.reason}`);
+    return { accepted: true, request: row };
+  }
+
+  @Get("api/admin/returns")
+  async adminReturns(@Query() query: any) { return listPage(await db.select().from(returnRequests).orderBy(returnRequests.createdAt), query); }
+
+  @Patch("api/admin/returns/:id")
+  async updateReturn(@Param("id") id: string, @Body() body: { status: string }) {
+    const row = await db.transaction(async (transaction) => {
+      const [current] = await transaction.select().from(returnRequests).where(eq(returnRequests.id, id));
+      if (!current) return undefined;
+      if (body.status === "approved" && !current.stockRestored) {
+        const [order] = await transaction.select().from(orders).where(eq(orders.id, current.orderId));
+        if (order && Array.isArray(order.items)) for (const item of order.items) {
+          const quantity = Number(item.quantity || 0);
+          if (!item.product_id || !Number.isInteger(quantity) || quantity < 1) continue;
+          await transaction.update(products).set({ stock: sql`${products.stock} + ${quantity}` }).where(eq(products.id, item.product_id));
+          if (item.size && item.color) await transaction.update(productVariants).set({ stock: sql`${productVariants.stock} + ${quantity}` }).where(sql`${productVariants.productId} = ${item.product_id} AND ${productVariants.size} = ${item.size} AND ${productVariants.color} = ${item.color}`);
+        }
+      }
+      const [updated] = await transaction.update(returnRequests).set({ status: body.status, stockRestored: current.stockRestored || body.status === "approved" }).where(eq(returnRequests.id, id)).returning();
+      return updated;
+    });
+    if (row) { await audit("return.status.updated", "return_request", id, { status: body.status, stock_restored: row.stockRestored }); if (body.status === "approved") await notify("return.approved", "Retour accepté", `Demande ${id} acceptée et stock restauré.`); }
+    return row;
   }
 
   @Get("api/admin/orders")
-  async adminOrders() {
-    return db.select().from(orders).orderBy(orders.createdAt);
+  async adminOrders(@Query("page") pageQuery = "1", @Query("limit") limitQuery = "20") {
+    const page = Math.max(1, Number(pageQuery) || 1);
+    const limit = Math.min(100, Math.max(1, Number(limitQuery) || 20));
+    const rows = await db.select().from(orders).orderBy(orders.createdAt);
+    return { data: rows.slice((page - 1) * limit, page * limit), page, limit, total: rows.length, pages: Math.max(1, Math.ceil(rows.length / limit)) };
   }
 
+  @Get("api/admin/audit-logs")
+  async auditLogList(@Query() query: any) { return listPage(await db.select().from(auditLogs).orderBy(auditLogs.createdAt), query); }
+
+  @Get("api/admin/exports/orders.csv")
+  async exportOrders() {
+    const rows = await db.select().from(orders).orderBy(orders.createdAt);
+    return {
+      filename: "aviator-orders.csv",
+      contentType: "text/csv; charset=utf-8",
+      content: ["order_number,customer,phone,city,total,status,created_at", ...rows.map((row) => [row.orderNumber, `${row.firstName} ${row.lastName}`, row.phone, row.city, row.total / 100, row.status, row.createdAt.toISOString()].map(csvEscape).join(","))].join("\n"),
+    };
+  }
+
+  @Get("api/admin/exports/products.csv")
+  async exportProducts() { const rows = await db.select().from(products); return { filename: "aviator-products.csv", contentType: "text/csv; charset=utf-8", content: ["name,slug,price,stock,color", ...rows.map((row) => [row.name, row.slug, row.price / 100, row.stock, row.colorName].map(csvEscape).join(","))].join("\n") }; }
+
+  @Get("api/admin/exports/customers.csv")
+  async exportCustomers() { const rows = await db.select().from(orders); const grouped = new Map<string, any>(); for (const row of rows) { const key = row.phone.replace(/[\s-]/g, ""); const current = grouped.get(key) || { phone: row.phone, name: `${row.firstName} ${row.lastName}`.trim(), city: row.city, orders: 0, total: 0 }; current.orders += 1; current.total += row.total; grouped.set(key, current); } return { filename: "aviator-customers.csv", contentType: "text/csv; charset=utf-8", content: ["name,phone,city,orders,total", ...[...grouped.values()].map((row) => [row.name, row.phone, row.city, row.orders, row.total / 100].map(csvEscape).join(","))].join("\n") }; }
+
+  @Get("api/admin/exports/inventory.csv")
+  async exportInventory() { const rows = await db.select().from(productVariants); return { filename: "aviator-inventory.csv", contentType: "text/csv; charset=utf-8", content: ["sku,product_id,size,color,stock,low_stock_threshold,active", ...rows.map((row) => [row.sku, row.productId, row.size, row.color, row.stock, row.lowStockThreshold, row.active].map(csvEscape).join(","))].join("\n") }; }
+
+  @Get("api/admin/exports/sales.csv")
+  async exportSales(@Query() query: any) { const rows = (await db.select().from(orders)).filter((row) => (!query.status || row.status === query.status) && (!query.city || row.city === query.city) && (!query.from || row.createdAt >= new Date(query.from)) && (!query.to || row.createdAt <= new Date(query.to))); return { filename: "aviator-sales.csv", contentType: "text/csv; charset=utf-8", content: ["order_number,city,status,total,created_at", ...rows.map((row) => [row.orderNumber, row.city, row.status, row.total / 100, row.createdAt.toISOString()].map(csvEscape).join(","))].join("\n") }; }
+
+  @Get("api/admin/exports/sales.xlsx")
+  async exportSalesXlsx(@Query() query: any, @Res() response: any) { const rows = (await db.select().from(orders)).filter((row) => (!query.status || row.status === query.status) && (!query.city || row.city === query.city) && (!query.from || row.createdAt >= new Date(query.from)) && (!query.to || row.createdAt <= new Date(query.to))).map((row) => ({ order_number: row.orderNumber, city: row.city, status: row.status, total_mad: row.total / 100, created_at: row.createdAt.toISOString() })); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Sales"); const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }); return response.header("content-disposition", "attachment; filename=aviator-sales.xlsx").type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").send(buffer); }
+
+  @Get("api/admin/notifications")
+  async notificationList(@Query() query: any) { return listPage(await db.select().from(notifications).orderBy(notifications.createdAt), query); }
+
+  @Patch("api/admin/notifications/:id")
+  async markNotification(@Param("id") id: string) { const [row] = await db.update(notifications).set({ read: true }).where(eq(notifications.id, id)).returning(); return row; }
+
   @Get("api/admin/products")
-  async adminProducts() {
+  async adminProducts(@Query("page") pageQuery = "1", @Query("limit") limitQuery = "20") {
+    const page = Math.max(1, Number(pageQuery) || 1);
+    const limit = Math.min(100, Math.max(1, Number(limitQuery) || 20));
     const rows = await db.select().from(products).orderBy(products.createdAt);
-    return rows.map((row) => ({ ...row, price: row.price / 100, color_name: row.colorName, sizes: row.sizes || [], images: row.images || [] }));
+    return { data: rows.slice((page - 1) * limit, page * limit).map((row) => ({ ...row, price: row.price / 100, color_name: row.colorName, sizes: row.sizes || [], images: row.images || [] })), page, limit, total: rows.length, pages: Math.max(1, Math.ceil(rows.length / limit)) };
   }
 
   @Get("api/admin/customers")
-  async adminCustomers() {
+  async adminCustomers(@Query() query: any) {
     const rows = await db.select().from(orders).orderBy(orders.createdAt);
     const customers = new Map<string, any>();
     for (const order of rows) {
@@ -117,11 +409,11 @@ class AppController {
       if (order.createdAt > current.lastOrder) current.lastOrder = order.createdAt;
       customers.set(key, current);
     }
-    return [...customers.values()].map((customer) => ({ ...customer, totalSpent: customer.totalSpent / 100, averageOrder: customer.totalSpent / 100 / customer.orders }));
+    return listPage([...customers.values()].map((customer) => ({ ...customer, totalSpent: customer.totalSpent / 100, averageOrder: customer.totalSpent / 100 / customer.orders })), query);
   }
 
   @Get("api/admin/categories")
-  async adminCategories() { return db.select().from(categories).orderBy(categories.sortOrder); }
+  async adminCategories(@Query() query: any) { return listPage(await db.select().from(categories).orderBy(categories.sortOrder), query); }
 
   @Post("api/admin/categories")
   async createCategory(@Body() body: { name: string; slug: string; description?: string }) {
@@ -139,9 +431,9 @@ class AppController {
   async deleteCategory(@Param("id") id: string) { await db.delete(categories).where(eq(categories.id, id)); return { ok: true }; }
 
   @Get("api/admin/variants")
-  async adminVariants(@Query("product_id") productId?: string) {
-    const rows = productId ? await db.select().from(productVariants).where(eq(productVariants.productId, productId)) : await db.select().from(productVariants);
-    return rows;
+  async adminVariants(@Query() query: any) {
+    const rows = query.product_id ? await db.select().from(productVariants).where(eq(productVariants.productId, query.product_id)) : await db.select().from(productVariants);
+    return listPage(rows, query);
   }
 
   @Patch("api/admin/variants/:id")
@@ -169,27 +461,50 @@ class AppController {
 
   @Patch("api/admin/orders/:id")
   async updateOrder(@Param("id") id: string, @Body() body: { status: string }) {
-    const [row] = await db.update(orders).set({ status: body.status }).where(eq(orders.id, id)).returning();
+    let wasCancelled = false;
+    const row = await db.transaction(async (transaction) => {
+      const [current] = await transaction.select().from(orders).where(eq(orders.id, id));
+      if (!current) return undefined;
+      wasCancelled = current.status === "annulee";
+      const shouldRestore = body.status === "annulee" && current.status !== "annulee" && !current.stockRestored;
+      if (shouldRestore && Array.isArray(current.items)) {
+        for (const item of current.items) {
+          const quantity = Number(item.quantity || 0);
+          if (!item.product_id || !Number.isInteger(quantity) || quantity < 1) continue;
+          await transaction.update(products).set({ stock: sql`${products.stock} + ${quantity}` }).where(eq(products.id, item.product_id));
+          if (item.size && item.color) {
+            await transaction.update(productVariants).set({ stock: sql`${productVariants.stock} + ${quantity}` }).where(sql`${productVariants.productId} = ${item.product_id} AND ${productVariants.size} = ${item.size} AND ${productVariants.color} = ${item.color}`);
+          }
+        }
+      }
+      const [updated] = await transaction.update(orders).set({ status: body.status, stockRestored: current.stockRestored || shouldRestore }).where(eq(orders.id, id)).returning();
+      return updated;
+    });
+    if (!row) return null;
+    if (body.status === "annulee" && !wasCancelled) await notify("order.cancelled", "Commande annulée", `${row.orderNumber} a été annulée.`);
+    await audit("order.status.updated", "order", id, { status: body.status });
     return row;
   }
 
   @Delete("api/admin/orders/:id")
-  async deleteOrder(@Param("id") id: string) { await db.delete(orders).where(eq(orders.id, id)); return { ok: true }; }
+  async deleteOrder(@Param("id") id: string) { await db.delete(orders).where(eq(orders.id, id)); await audit("order.deleted", "order", id); return { ok: true }; }
 
   @Post("api/admin/products")
   async createProduct(@Body() body: any) {
     const [row] = await db.insert(products).values({ name: body.name, slug: body.slug, price: Math.round(Number(body.price) * 100), stock: Number(body.stock || 0), images: body.images || [], colorName: body.color_name, sizes: body.sizes || ["S", "M", "L", "XL", "XXL"], featured: Boolean(body.featured) }).returning();
+    await audit("product.created", "product", row.id, { name: row.name });
     return row;
   }
 
   @Patch("api/admin/products/:id")
   async updateProduct(@Param("id") id: string, @Body() body: any) {
     const [row] = await db.update(products).set({ name: body.name, price: Math.round(Number(body.price) * 100), stock: Number(body.stock || 0), images: body.images || [], colorName: body.color_name, sizes: body.sizes || ["S", "M", "L", "XL", "XXL"], featured: Boolean(body.featured) }).where(eq(products.id, id)).returning();
+    await audit("product.updated", "product", id, { name: row?.name });
     return row;
   }
 
   @Get("api/admin/shipping-zones")
-  async adminShippingZones() { return db.select().from(shippingZones).orderBy(shippingZones.city); }
+  async adminShippingZones(@Query() query: any) { return listPage(await db.select().from(shippingZones).orderBy(shippingZones.city), query); }
 
   @Patch("api/admin/shipping-zones/:id")
   async updateShippingZone(@Param("id") id: string, @Body() body: any) {
@@ -206,23 +521,25 @@ class AppController {
   @Delete("api/admin/products/:id")
   async deleteProduct(@Param("id") id: string) {
     await db.delete(products).where(eq(products.id, id));
+    await audit("product.deleted", "product", id);
     return { ok: true };
   }
 
   @Get("api/admin/coupons")
-  async adminCoupons() {
-    return db.select().from(coupons).orderBy(coupons.code);
+  async adminCoupons(@Query() query: any) {
+    return listPage(await db.select().from(coupons).orderBy(coupons.code), query);
   }
 
   @Post("api/admin/coupons")
   async createCoupon(@Body() body: any) {
-    const [row] = await db.insert(coupons).values({ code: body.code.toUpperCase(), discountType: body.discount_type, value: Number(body.value), minCart: Number(body.min_cart || 0), usageLimit: body.usage_limit ? Number(body.usage_limit) : null, packOnly: Boolean(body.pack_only), active: true }).returning();
+    const [row] = await db.insert(coupons).values({ code: body.code.toUpperCase(), discountType: body.discount_type, value: Number(body.value), maxDiscount: body.max_discount ? Math.round(Number(body.max_discount) * 100) : null, minCart: Number(body.min_cart || 0), usageLimit: body.usage_limit ? Number(body.usage_limit) : null, packOnly: Boolean(body.pack_only), productIds: Array.isArray(body.product_ids) ? body.product_ids : [], active: true }).returning();
     return row;
   }
 
   @Patch("api/admin/coupons/:id")
   async updateCoupon(@Param("id") id: string, @Body() body: any) {
     const [row] = await db.update(coupons).set({ active: Boolean(body.active) }).where(eq(coupons.id, id)).returning();
+    await audit("coupon.status.updated", "coupon", id, { active: body.active });
     return row;
   }
 
@@ -230,13 +547,14 @@ class AppController {
   async deleteCoupon(@Param("id") id: string) { await db.delete(coupons).where(eq(coupons.id, id)); return { ok: true }; }
 
   @Get("api/admin/promotions")
-  async adminPromotions() {
-    return db.select().from(promotions).orderBy(promotions.sortOrder);
+  async adminPromotions(@Query() query: any) {
+    return listPage(await db.select().from(promotions).orderBy(promotions.sortOrder), query);
   }
 
   @Patch("api/admin/promotions/:id")
   async updatePromotion(@Param("id") id: string, @Body() body: any) {
     const [row] = await db.update(promotions).set({ active: Boolean(body.active), titleFr: body.title_fr, titleDarija: body.title_darija, subtitleFr: body.subtitle_fr, subtitleDarija: body.subtitle_darija, backgroundColor: body.background_color, textColor: body.text_color, accentColor: body.accent_color, imageUrl: body.image_url, couponCode: body.coupon_code }).where(eq(promotions.id, id)).returning();
+    await audit("promotion.updated", "promotion", id, { active: body.active });
     return row;
   }
 
@@ -247,13 +565,14 @@ class AppController {
   async deletePromotion(@Param("id") id: string) { await db.delete(promotions).where(eq(promotions.id, id)); return { ok: true }; }
 
   @Get("api/admin/reviews")
-  async adminReviews() {
-    return db.select().from(reviews).orderBy(reviews.createdAt);
+  async adminReviews(@Query() query: any) {
+    return listPage(await db.select().from(reviews).orderBy(reviews.createdAt), query);
   }
 
   @Patch("api/admin/reviews/:id")
   async moderateReview(@Param("id") id: string, @Body() body: { status: string }) {
     const [row] = await db.update(reviews).set({ status: body.status }).where(eq(reviews.id, id)).returning();
+    await audit("review.moderated", "review", id, { status: body.status });
     return row;
   }
 

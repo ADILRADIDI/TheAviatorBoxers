@@ -23,10 +23,12 @@ Le frontend contient déjà le catalogue, les fiches produit, les packs, le pani
 ## CLI-003 - Coupons côté serveur
 
 - Priorité : `P1`
-- Statut : `TODO`
+- Statut : `IN_PROGRESS`
 - Dépendances : `ADM-007`, `CLI-002`
 - Description : valider et recalculer les remises côté API avant toute confirmation de commande.
 - Critères d'acceptation : le total affiché correspond au total serveur; les coupons minimum panier, pack-only, expiration et limite sont respectés; la remise ne peut pas produire un total négatif.
+
+> Réalisé : recalcul serveur transactionnel, minimum panier, pack-only, expiration, limite d'usage, ciblage produit, plafond de remise et total jamais négatif.
 
 ## CLI-004 - Checkout COD
 
@@ -37,6 +39,8 @@ Le frontend contient déjà le catalogue, les fiches produit, les packs, le pani
 - Critères d'acceptation : prénom, nom, téléphone, ville et adresse sont validés; les frais viennent de `ShippingZone` avec fallback documenté; une erreur conserve le panier; une commande réussie vide le panier une seule fois.
 
 > Réalisé : frais dynamiques par ville, état de chargement du calcul de livraison, validation des coordonnées et double-submit déjà protégée par `submitting`.
+
+> Renforcé : une clé d'idempotence persistée empêche les doublons lors des retries réseau ou d'une nouvelle soumission serveur.
 
 ## CLI-005 - Paiement en ligne (hors périmètre)
 
@@ -82,16 +86,20 @@ Le frontend contient déjà le catalogue, les fiches produit, les packs, le pani
 ## CLI-009 - Retours et remboursements
 
 - Priorité : `P1`
-- Statut : `TODO`
+- Statut : `IN_PROGRESS`
 - Dépendances : `ADM-005`, `ADM-009`
 - Description : permettre une demande de retour selon les conditions commerciales validées.
 - Critères d'acceptation : la demande est liée à une commande livrée, visible par le client et traitable par l'admin; les statuts et délais sont affichés.
 
+> Réalisé : demande liée à une commande livrée, anti-duplication serveur et statut de retour visible dans le suivi invité.
+
 ## CLI-010 - Accessibilité et responsive
 
 - Priorité : `P0`
-- Statut : `TODO`
+- Statut : `IN_PROGRESS`
 - Dépendances : `CLI-001`, `CLI-004`
 - Description : couvrir clavier, focus, labels, messages d'erreur, contraste, textes alternatifs et écrans mobile/desktop.
 - Critères d'acceptation : les parcours catalogue, panier et checkout sont utilisables au clavier et sans chevauchement à partir de 320px de largeur.
+
+> Réalisé : test Playwright Chromium à 320px sur accueil, collection, panier et checkout; aucun débordement horizontal détecté.
  

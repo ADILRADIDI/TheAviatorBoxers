@@ -24,7 +24,7 @@ export default function Cart() {
     setChecking(true);
     setCouponMsg("");
     try {
-      const result = await validateCoupon(code, subtotal);
+      const result = await validateCoupon(code, subtotal, items);
       if (result.valid) {
         applyCoupon(result.coupon);
         setCouponMsg("Code promo appliqué !");
@@ -124,7 +124,7 @@ export default function Cart() {
 
               {/* Coupon */}
               <form onSubmit={handleApplyCoupon} className="mt-4">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Code promo</label>
+                <label htmlFor="coupon-code" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Code promo</label>
                 {coupon ? (
                   <div className="mt-2 flex items-center justify-between border border-accent-lime bg-accent-lime/10 px-3 py-2">
                     <span className="flex items-center gap-2 text-sm font-medium text-navy"><Tag className="h-3.5 w-3.5" /> {coupon.code}</span>
@@ -133,18 +133,21 @@ export default function Cart() {
                 ) : (
                   <div className="mt-2 flex gap-2">
                     <input
+                      id="coupon-code"
                       type="text"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
                       placeholder="Votre code"
                       className="flex-1 border border-border px-3 py-2.5 text-sm uppercase focus:border-navy focus:outline-none"
+                      aria-invalid={Boolean(couponMsg && !coupon)}
+                      aria-describedby={couponMsg && !coupon ? "coupon-error" : undefined}
                     />
                     <button type="submit" disabled={checking} className="bg-navy px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white disabled:opacity-50">
                       {checking ? "..." : "Appliquer"}
                     </button>
                   </div>
                 )}
-                {couponMsg && !coupon && <p className="mt-1.5 text-xs text-destructive">{couponMsg}</p>}
+                {couponMsg && !coupon && <p id="coupon-error" role="alert" className="mt-1.5 text-xs text-destructive">{couponMsg}</p>}
                 {coupon && <p className="mt-1.5 text-xs text-accent-lime">{couponMsg}</p>}
               </form>
 

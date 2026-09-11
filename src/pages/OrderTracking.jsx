@@ -13,6 +13,10 @@ const STATUS_LABELS = {
   livree: "Livrée",
   annulee: "Annulée",
   retour: "Retour en cours",
+  requested: "Demande reçue",
+  approved: "Retour accepté",
+  rejected: "Retour refusé",
+  completed: "Retour terminé",
   echec: "Échec",
 };
 
@@ -21,6 +25,8 @@ export default function OrderTracking() {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [returnForm, setReturnForm] = useState({ reason: "", notes: "" });
+  const [returnMessage, setReturnMessage] = useState("");
 
   const submit = async (event) => {
     event.preventDefault();
@@ -76,6 +82,7 @@ export default function OrderTracking() {
               <div className="mt-2 flex items-center justify-between text-sm"><span className="text-muted-foreground">Total</span><strong>{formatPrice(order.total)}</strong></div>
             </section>
           )}
+          {order?.return_request ? <section className="mt-8 border border-border bg-secondary p-6"><h2 className="font-display text-xl font-bold">Retour</h2><p className="mt-3 text-sm text-muted-foreground">Statut : <strong className="text-foreground">{STATUS_LABELS[order.return_request.status] || order.return_request.status}</strong></p><p className="mt-2 text-sm text-muted-foreground">Votre demande est suivie par notre équipe. Nous vous contacterons si une information complémentaire est nécessaire.</p></section> : order?.status === "livree" && <form onSubmit={async (event) => { event.preventDefault(); const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/returns`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order_number: order.order_number, phone: form.phone, ...returnForm }) }); const result = await response.json(); setReturnMessage(result.accepted ? "Votre demande de retour a été envoyée." : result.duplicate ? "Une demande existe déjà pour cette commande." : "Cette commande ne peut pas être retournée."); if (result.request) setOrder({ ...order, return_request: result.request }); }} className="mt-8 border border-border bg-secondary p-6"><h2 className="font-display text-xl font-bold">Demander un retour</h2><select required value={returnForm.reason} onChange={(event) => setReturnForm({ ...returnForm, reason: event.target.value })} className="mt-4 w-full border border-border bg-background px-3 py-3 text-sm"><option value="">Choisissez un motif</option><option value="taille">Problème de taille</option><option value="defaut">Défaut produit</option><option value="autre">Autre</option></select><textarea value={returnForm.notes} onChange={(event) => setReturnForm({ ...returnForm, notes: event.target.value })} className="mt-3 w-full border border-border bg-background px-3 py-3 text-sm" placeholder="Précisions (optionnel)" />{returnMessage && <p className="mt-3 text-sm text-muted-foreground">{returnMessage}</p>}<button className="mt-4 bg-navy px-5 py-3 text-xs font-bold uppercase text-white">Envoyer la demande</button></form>}
 
           <Link to="/collection" className="mt-6 block text-center text-xs font-medium uppercase tracking-wider text-muted-foreground underline underline-offset-4">Continuer mes achats</Link>
         </div>

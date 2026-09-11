@@ -19,6 +19,11 @@ development services with:
 docker compose up -d
 ```
 
+The migrated API requires explicit `DATABASE_URL`, `ADMIN_PASSWORD` and
+`ADMIN_SECRET` values. Never use the placeholders from `.env.example` in
+production. `MEDIA_ROOT` controls the filesystem-backed media library; Docker
+uses `/var/lib/aviator/media` on the persistent `media_data` volume.
+
 Do not expose PostgreSQL or Redis publicly on the Hostinger VPS. They should be
 reachable only by the application containers or localhost through a firewall.
 

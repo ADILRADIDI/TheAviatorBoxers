@@ -26,6 +26,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey] = useState(() => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const [shippingZone, setShippingZone] = useState(null);
   const [shippingLoading, setShippingLoading] = useState(false);
 
@@ -97,6 +98,7 @@ export default function Checkout() {
         coupon_code: coupon?.code || "",
         status: "nouvelle",
         source: "checkout",
+        idempotency_key: idempotencyKey,
       };
       const order = await createOrder(orderPayload);
 

@@ -69,6 +69,10 @@ Ce document est base sur `Documents/DOC1.pdf`, `Documents/PV_Reunion_Aviator_10-
  [x] Admin promotions : activation/désactivation et champs bilingues existants.
  [x] Admin avis : approbation et rejet.
  [x] Variantes produit seedées avec SKU, taille, couleur et stock individuel.
+[x] Pagination de base API/admin pour commandes et produits.
+[x] Audit logs, notifications et exports CSV commandes/produits/clients.
+[x] SEO technique : robots, sitemap, canonical, JSON-LD organisation et produit.
+[x] Smoke tests Playwright client et login admin.
 - Ne jamais stocker de carte bancaire.
 
 ### P1-02 - Retours et remboursements
@@ -151,10 +155,10 @@ pnpm --filter @aviator/api build
 
 ## Definition de fini finale
 
-- [ ] Dashboard admin securise et utilisable : l'interface locale `/admin` est livrée, mais l'authentification et le rôle `admin` restent à ajouter avant production.
-- [ ] Produits, variantes, commandes, coupons, promotions et avis gerables depuis admin.
-- [ ] Checkout transactionnel avec stock et total serveur.
-- [x] Typecheck global, lint, build API et build frontend verts; tests unitaires/integration/E2E restent à ajouter.
+- [x] Dashboard admin securise et utilisable en local : login signe, role admin et expiration de session.
+- [x] Produits, variantes, commandes, coupons, promotions et avis gerables depuis admin.
+- [x] Checkout transactionnel avec stock et total serveur.
+- [x] Typecheck global, lint, build API/frontend, tests unitaires API et smoke E2E verts.
 - [ ] Pages francaises et darija relues.
 - [ ] Accessibilite et responsive recetes.
 - [ ] Backup, monitoring et rollback documentes.
