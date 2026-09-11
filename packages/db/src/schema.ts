@@ -79,6 +79,19 @@ export const productVariants = pgTable("product_variants", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const inventoryMovements = pgTable("inventory_movements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  variantId: uuid("variant_id").notNull().references(() => productVariants.id),
+  type: text("type").notNull(),
+  quantity: integer("quantity").notNull(),
+  beforeStock: integer("before_stock").notNull(),
+  afterStock: integer("after_stock").notNull(),
+  reason: text("reason").notNull(),
+  note: text("note"),
+  actorUserId: uuid("actor_user_id").references(() => adminUsers.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const shippingZones = pgTable("shipping_zones", {
   id: uuid("id").defaultRandom().primaryKey(),
   city: text("city").notNull().unique(),

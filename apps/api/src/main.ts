@@ -21,8 +21,8 @@ const app = await NestFactory.create<NestFastifyApplication>(
 await app.register((await import("@fastify/multipart")).default, { limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
 app.enableCors({ origin: true, credentials: true, allowedHeaders: ["Content-Type", "x-admin-token"], methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"] });
-  metrics.requests += 1;
 app.use(async (request: any, response: any, next: () => void) => {
+  metrics.requests += 1;
   const requestId = request.headers["x-request-id"] || randomUUID();
   response.header("x-request-id", requestId);
   const startedAt = Date.now();

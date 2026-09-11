@@ -8,6 +8,7 @@ export function permissionFor(url: string, method: string) {
   if (resource === "dashboard") return "dashboard.view";
   if (resource === "orders") return method === "GET" ? "orders.view" : method === "DELETE" ? "orders.cancel" : "orders.update";
   if (resource === "products") return method === "GET" ? "products.view" : method === "POST" ? "products.create" : method === "DELETE" ? "products.delete" : "products.update";
+  if (resource === "inventory") return method === "GET" ? "inventory.view" : "inventory.adjust";
   if (resource === "categories") return method === "GET" ? "categories.view" : method === "POST" ? "categories.create" : method === "DELETE" ? "categories.delete" : "categories.update";
   if (resource === "coupons") return method === "GET" ? "discounts.view" : method === "POST" ? "discounts.create" : method === "DELETE" ? "discounts.delete" : "discounts.update";
   if (resource === "promotions") return method === "GET" ? "promotions.view" : method === "POST" ? "promotions.create" : method === "DELETE" ? "promotions.delete" : "promotions.update";

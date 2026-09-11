@@ -1,4 +1,4 @@
-import { adminSessions, adminUserRoles, adminUsers, auditLogs, categories, cmsPages, coupons, createDatabase, mediaAssets, notifications, orders, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones } from "@aviator/db";
+import { adminSessions, adminUserRoles, adminUsers, auditLogs, categories, cmsPages, coupons, createDatabase, inventoryMovements, mediaAssets, notifications, orders, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones } from "@aviator/db";
 import { createWriteStream, mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
@@ -434,6 +434,28 @@ class AppController {
   async adminVariants(@Query() query: any) {
     const rows = query.product_id ? await db.select().from(productVariants).where(eq(productVariants.productId, query.product_id)) : await db.select().from(productVariants);
     return listPage(rows, query);
+  }
+
+  @Get("api/admin/inventory")
+  async inventory(@Query() query: any) { const rows = await db.select().from(productVariants); return listPage(rows, query); }
+
+  @Get("api/admin/inventory/movements")
+  async inventoryMovementsList(@Query() query: any) { return listPage(await db.select().from(inventoryMovements).orderBy(inventoryMovements.createdAt), query); }
+
+  @Patch("api/admin/inventory/:id")
+  async adjustInventory(@Param("id") id: string, @Body() body: { stock: number; reason: string; note?: string }) {
+    if (!body.reason?.trim() || !Number.isInteger(Number(body.stock)) || Number(body.stock) < 0) throw new Error("INVALID_STOCK_ADJUSTMENT");
+    const updated = await db.transaction(async (transaction) => {
+      const [variant] = await transaction.select().from(productVariants).where(eq(productVariants.id, id));
+      if (!variant) return undefined;
+      const before = variant.stock; const after = Number(body.stock); const delta = after - before;
+      const [saved] = await transaction.update(productVariants).set({ stock: after }).where(eq(productVariants.id, id)).returning();
+      const context = auditContext.getStore();
+      await transaction.insert(inventoryMovements).values({ variantId: id, type: delta >= 0 ? "increase" : "decrease", quantity: delta, beforeStock: before, afterStock: after, reason: body.reason.trim(), note: body.note, actorUserId: context?.userId });
+      return saved;
+    });
+    if (updated) await audit("inventory.adjusted", "product_variant", id, { stock: updated.stock, reason: body.reason });
+    return updated;
   }
 
   @Patch("api/admin/variants/:id")
