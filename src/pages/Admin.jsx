@@ -67,7 +67,7 @@ export default function Admin() {
         setData(result?.data || result);
         setMeta(result?.pages ? result : null);
       }
-    } catch (err) { setError(err.message); }
+    } catch (err) { setData([]); setMeta(null); setError(err.message); }
     finally { setLoading(false); }
   };
   useEffect(() => {
