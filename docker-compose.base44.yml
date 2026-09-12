@@ -1,0 +1,108 @@
+services:
+  # One-shot: install pnpm dependencies and build the @aviator/db workspace package
+  setup:
+    image: node:22-alpine
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: sh -c "corepack enable && pnpm install && pnpm --filter @aviator/db build"
+
+  # PostgreSQL for the API
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=aviator
+      - POSTGRES_USER=aviator
+      - POSTGRES_PASSWORD=aviator_dev_password_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aviator -d aviator"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redis for the worker
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot: run DB migrations and seed data
+  migrate:
+    image: node:22-alpine
+    working_dir: /app
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://aviator:aviator_dev_password_2024@postgres:5432/aviator
+      - ADMIN_EMAIL=admin@theaviator.local
+      - ADMIN_PASSWORD=dev_admin_pass_123
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: sh -c "corepack enable && pnpm --filter @aviator/db migrate && pnpm --filter @aviator/db seed"
+
+  # NestJS API (dev mode with tsx watch)
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    restart: unless-stopped
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://aviator:aviator_dev_password_2024@postgres:5432/aviator
+      - API_PORT=3001
+      - ADMIN_SECRET=dev_admin_secret_very_long_random_value
+      - ADMIN_EMAIL=admin@theaviator.local
+      - ADMIN_PASSWORD=dev_admin_pass_123
+      - MEDIA_ROOT=/var/lib/aviator/media
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - media_data:/var/lib/aviator/media
+    command: sh -c "corepack enable && pnpm --filter @aviator/api dev"
+
+  # Vite frontend dev server (the user-facing preview on port 3000)
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    restart: unless-stopped
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=https://3001-${BASE44_PUBLIC_HOST_SUFFIX}
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    ports:
+      - "3000:5173"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: sh -c "corepack enable && npx vite --host 0.0.0.0 --port 5173"
+
+volumes:
+  node_modules:
+  postgres_data:
+  redis_data:
+  media_data:

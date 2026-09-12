@@ -24,7 +24,7 @@ app.enableCors({ origin: true, credentials: true, allowedHeaders: ["Content-Type
 app.use(async (request: any, response: any, next: () => void) => {
   metrics.requests += 1;
   const requestId = request.headers["x-request-id"] || randomUUID();
-  response.header("x-request-id", requestId);
+  response.setHeader("x-request-id", requestId);
   const startedAt = Date.now();
   response.raw?.once?.("finish", () => { if (response.statusCode >= 500) metrics.errors += 1; console.log(JSON.stringify({ type: "http.request", request_id: requestId, method: request.method, path: request.url.split("?")[0], status: response.statusCode, duration_ms: Date.now() - startedAt, user_id: request.admin?.userId || null })); });
   if (request.method === "OPTIONS") {
