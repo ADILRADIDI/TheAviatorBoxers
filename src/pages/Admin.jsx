@@ -56,7 +56,7 @@ export default function Admin() {
       setError("");
       setLoading(true);
       if (tab === "dashboard") setData(await request("/api/admin/dashboard"));
-      else if (tab === "variants") setData(await request("/api/admin/variants"));
+      
       else if (tab === "settings") setData(await request("/api/admin/settings"));
       else if (tab === "exports") setData([]);
       else {
