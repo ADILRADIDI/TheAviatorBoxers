@@ -17,6 +17,8 @@ export function permissionFor(url: string, method: string) {
   if (resource === "audit-logs") return "audit_logs.view";
   if (resource === "notifications") return "notifications.view";
   if (resource === "exports") return "reports.export";
+  if (resource === "payment-methods") return method === "GET" ? "payments.view" : "payments.update";
+  if (resource === "settings") return method === "GET" ? "settings.view" : "settings.update";
   return method === "GET" ? `${resource}.view` : `${resource}.update`;
 }
 

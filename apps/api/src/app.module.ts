@@ -1,4 +1,4 @@
-import { adminSessions, adminUserRoles, adminUsers, auditLogs, categories, cmsPages, coupons, createDatabase, inventoryMovements, mediaAssets, notifications, orders, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones } from "@aviator/db";
+import { adminSessions, adminUserRoles, adminUsers, appSettings, auditLogs, categories, cmsPages, coupons, createDatabase, inventoryMovements, mediaAssets, notifications, orders, paymentMethods, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones } from "@aviator/db";
 import { createWriteStream, mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
@@ -471,13 +471,31 @@ class AppController {
       db.select().from(products),
       db.select().from(reviews).where(eq(reviews.status, "pending")),
     ]);
+    const activeOrders = allOrders.filter((order) => order.status !== "annulee");
+    const statusCounts = allOrders.reduce((counts, order) => { counts[order.status] = (counts[order.status] || 0) + 1; return counts; }, {} as Record<string, number>);
+    const quantityByProduct = new Map<string, { name: string; quantity: number; revenue: number }>();
+    for (const order of activeOrders) {
+      for (const item of (Array.isArray(order.items) ? order.items : []) as any[]) {
+        const key = item.product_id || item.name;
+        const entry = quantityByProduct.get(key) || { name: item.name || "Produit", quantity: 0, revenue: 0 };
+        entry.quantity += Number(item.quantity || 0);
+        entry.revenue += Number(item.quantity || 0) * Number(item.price || 0);
+        quantityByProduct.set(key, entry);
+      }
+    }
+    const daysAgo = (days: number) => Date.now() - days * 24 * 60 * 60 * 1000;
+    const periodRevenue = (since: number) => activeOrders.filter((order) => new Date(order.createdAt).getTime() >= since).reduce((sum, order) => sum + order.total, 0) / 100;
     return {
       orders: allOrders.length,
       customers: new Set(allOrders.map((order) => order.phone)).size,
-      revenue: allOrders.filter((order) => order.status !== "annulee").reduce((sum, order) => sum + order.total, 0) / 100,
+      revenue: activeOrders.reduce((sum, order) => sum + order.total, 0) / 100,
       averageOrder: allOrders.length ? allOrders.reduce((sum, order) => sum + order.total, 0) / 100 / allOrders.length : 0,
       lowStock: allProducts.filter((product) => product.stock < 5).length,
       pendingReviews: pendingReviews.length,
+      ordersByStatus: statusCounts,
+      bestSellers: [...quantityByProduct.values()].sort((a, b) => b.quantity - a.quantity).slice(0, 5),
+      revenue7d: periodRevenue(daysAgo(7)),
+      revenue30d: periodRevenue(daysAgo(30)),
     };
   }
 
@@ -600,6 +618,51 @@ class AppController {
 
   @Delete("api/admin/reviews/:id")
   async deleteReview(@Param("id") id: string) { await db.delete(reviews).where(eq(reviews.id, id)); return { ok: true }; }
+
+  @Get("api/admin/payment-methods")
+  async adminPaymentMethods() {
+    return db.select().from(paymentMethods).orderBy(paymentMethods.sortOrder);
+  }
+
+  @Post("api/admin/payment-methods")
+  async createPaymentMethod(@Body() body: any) {
+    const [row] = await db.insert(paymentMethods).values({ code: String(body.code || "").trim().toLowerCase(), name: body.name, description: body.description || null, instructions: body.instructions || null, active: body.active !== false, sortOrder: Number(body.sort_order || 0) }).returning();
+    await audit("payment_method.created", "payment_method", row.id, { code: row.code });
+    return row;
+  }
+
+  @Patch("api/admin/payment-methods/:id")
+  async updatePaymentMethod(@Param("id") id: string, @Body() body: any) {
+    const [row] = await db.update(paymentMethods).set({ code: body.code ? String(body.code).trim().toLowerCase() : undefined, name: body.name, description: body.description, instructions: body.instructions, active: typeof body.active === "boolean" ? body.active : undefined, sortOrder: body.sort_order !== undefined ? Number(body.sort_order) : undefined }).where(eq(paymentMethods.id, id)).returning();
+    await audit("payment_method.updated", "payment_method", id, { active: row?.active });
+    return row;
+  }
+
+  @Delete("api/admin/payment-methods/:id")
+  async deletePaymentMethod(@Param("id") id: string) { await db.delete(paymentMethods).where(eq(paymentMethods.id, id)); await audit("payment_method.deleted", "payment_method", id, {}); return { ok: true }; }
+
+  @Get("api/payment-methods")
+  async publicPaymentMethods() {
+    return db.select({ id: paymentMethods.id, code: paymentMethods.code, name: paymentMethods.name, description: paymentMethods.description, instructions: paymentMethods.instructions, sortOrder: paymentMethods.sortOrder }).from(paymentMethods).where(eq(paymentMethods.active, true)).orderBy(paymentMethods.sortOrder);
+  }
+
+  @Get("api/admin/settings")
+  async adminSettings() {
+    const rows = await db.select().from(appSettings);
+    return Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  }
+
+  @Patch("api/admin/settings")
+  async updateSettings(@Body() body: Record<string, Record<string, unknown>>) {
+    for (const [key, value] of Object.entries(body)) {
+      if (!value || typeof value !== "object") continue;
+      const [existing] = await db.select().from(appSettings).where(eq(appSettings.key, key));
+      if (existing) await db.update(appSettings).set({ value: { ...(existing.value as object), ...value }, updatedAt: new Date() }).where(eq(appSettings.key, key));
+      else await db.insert(appSettings).values({ key, value });
+    }
+    await audit("settings.updated", "settings", "app", { keys: Object.keys(body) });
+    return this.adminSettings();
+  }
 }
 
 @Module({

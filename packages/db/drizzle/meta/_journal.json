@@ -134,6 +134,13 @@
       "when": 1789161164755,
       "tag": "0018_redundant_nicolaos",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789213334799,
+      "tag": "0019_payment_methods_settings",
+      "breakpoints": true
     }
   ]
 }
