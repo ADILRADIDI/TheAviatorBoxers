@@ -11,7 +11,7 @@ export default function Confirmation() {
   const order = location.state?.order;
   const { t } = useLanguage();
 
-  usePageMeta({ title: t("Commande confirmée — The Aviator"), description: "Merci pour votre commande The Aviator. Nous vous contacterons rapidement pour confirmer la livraison." });
+  usePageMeta({ title: t("Commande confirmée — The Aviator"), description: "Merci pour votre commande The Aviator. Nous vous contacterons rapidement pour confirmer la livraison.", noindex: true });
 
   const reference = order?.order_number || order?.id?.slice(-8) || "";
   const waMessage = order

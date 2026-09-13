@@ -5,6 +5,7 @@ import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import PageHeader from "@/components/storefront/PageHeader";
 import { formatPrice } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta } from "@/lib/seo";
 
 const STATUS_LABELS = {
   nouvelle: "Nouvelle",
@@ -29,6 +30,7 @@ export default function OrderTracking() {
   const [returnForm, setReturnForm] = useState({ reason: "", notes: "" });
   const [returnMessage, setReturnMessage] = useState("");
   const { t } = useLanguage();
+  usePageMeta({ title: "Suivi de commande — The Aviator", description: "Suivez votre commande The Aviator : saisissez votre numéro de commande et votre téléphone. Livraison 24-48h partout au Maroc.", noindex: true });
 
   const submit = async (event) => {
     event.preventDefault();

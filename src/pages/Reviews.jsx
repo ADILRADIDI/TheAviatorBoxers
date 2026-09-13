@@ -7,6 +7,7 @@ import { useAsync } from "@/lib/useAsync";
 import { fetchFeaturedReviews } from "@/lib/store";
 import { Quote } from "lucide-react";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 async function createReview(payload) {
   const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/reviews`, {
@@ -34,6 +35,19 @@ export default function Reviews() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { t } = useLanguage();
+  usePageMeta({ title: "Avis clients — The Aviator", description: "Plus de 5 000 hommes au Maroc nous font confiance. Découvrez les avis de nos clients sur le confort, la qualité et la livraison de nos boxers premium." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Avis clients", url: `${SITE_URL}/avis` }]));
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "Boxer The Aviator",
+    review: (reviews && reviews.length > 0 ? reviews : FALLBACK).slice(0, 6).map((r) => ({
+      "@type": "Review",
+      author: { "@type": "Person", name: r.name || "Client vérifié" },
+      reviewRating: { "@type": "Rating", ratingValue: r.rating || 5, bestRating: 5 },
+      reviewBody: r.comment,
+    })),
+  });
 
   const submitReview = async (event) => {
     event.preventDefault();

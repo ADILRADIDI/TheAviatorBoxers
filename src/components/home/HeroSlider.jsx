@@ -33,6 +33,7 @@ export default function HeroSlider({ images = [], alt = "" }) {
             src={images[index]}
             alt={alt}
             fittingType="fill"
+            priority
             className="h-full w-full object-cover opacity-70"
           />
         </motion.div>

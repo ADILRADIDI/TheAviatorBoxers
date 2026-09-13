@@ -95,7 +95,7 @@ export default function ProductDetail() {
               ))}
             </div>
             <div className="aspect-[3/4] flex-1 overflow-hidden bg-muted">
-              {currentImage ? <Image src={currentImage} alt={product.name} fittingType="fill" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-muted-foreground">{t("Aucune image")}</div>}
+              {currentImage ? <Image src={currentImage} alt={product.name} fittingType="fill" priority className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-muted-foreground">{t("Aucune image")}</div>}
             </div>
           </div>
 

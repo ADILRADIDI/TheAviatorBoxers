@@ -3,9 +3,12 @@ import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { STORE } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 export default function ShippingReturns() {
   const { t } = useLanguage();
+  usePageMeta({ title: "Livraison & retours — The Aviator", description: "Livraison 24-48h partout au Maroc avec paiement à la livraison. Retours sous 7 jours : échanges et remboursements simples via WhatsApp." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Livraison & retours", url: `${SITE_URL}/livraison-retours` }]));
   return (
     <>
       <AnnouncementBar />

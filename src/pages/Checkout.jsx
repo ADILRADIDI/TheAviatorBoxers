@@ -12,6 +12,7 @@ import { buildWhatsAppMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { track, Events } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta } from "@/lib/seo";
 
 function validatePhone(phone) {
   const p = phone.replace(/[\s-]/g, "");
@@ -22,6 +23,7 @@ export default function Checkout() {
   const { items, subtotal, coupon, clearCart } = useCart();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  usePageMeta({ title: "Commande — The Aviator", description: "Finalisez votre commande The Aviator. Paiement à la livraison, expédiée sous 24-48h.", noindex: true });
 
   const [form, setForm] = useState({
     name: "", phone: "", email: "", city: "", address: "", notes: "",

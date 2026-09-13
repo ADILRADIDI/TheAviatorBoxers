@@ -6,7 +6,7 @@ import ProductCard from "@/components/storefront/ProductCard";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useAsync } from "@/lib/useAsync";
 import { fetchProducts } from "@/lib/store";
-import { usePageMeta } from "@/lib/seo";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 import { useLanguage } from "@/lib/language";
 
 const SORT_OPTIONS = [
@@ -48,6 +48,7 @@ export default function Collection() {
     title: "Collection — The Aviator",
     description: t("Découvrez tous nos boxers premium pour hommes : coton et Lycra, confort et maintien. Paiement à la livraison partout au Maroc."),
   });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Collection", url: `${SITE_URL}/collection` }]));
 
   const toggle = (value, list, setter) => {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);

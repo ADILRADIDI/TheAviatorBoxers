@@ -5,6 +5,7 @@ import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 const FAQS = [
   { cat: "Commande", q: "Comment passer une commande ?", a: "Choisissez votre produit, sélectionnez la taille, ajoutez au panier puis finalisez la commande. Vous pouvez aussi commander directement via WhatsApp." },
@@ -24,6 +25,17 @@ const FAQS = [
 export default function FAQ() {
   const [open, setOpen] = useState(0);
   const { t } = useLanguage();
+  usePageMeta({ title: "FAQ — The Aviator", description: "Réponses aux questions fréquentes : commande, livraison 24-48h, paiement à la livraison, composition 95% coton 5% Lycra, tailles et retours au Maroc." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "FAQ", url: `${SITE_URL}/faq` }]));
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  });
   const categories = ["Tous", ...new Set(FAQS.map((f) => f.cat))];
   const [filter, setFilter] = useState("Tous");
   const list = filter === "Tous" ? FAQS : FAQS.filter((f) => f.cat === filter);

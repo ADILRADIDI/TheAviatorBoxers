@@ -6,6 +6,7 @@ import { STORE } from "@/lib/store";
 import { whatsappContactUrl } from "@/lib/whatsapp";
 import { useLanguage } from "@/lib/language";
 import { cn } from "@/lib/utils";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 const channelCards = [
   { icon: MessageCircle, label: "WhatsApp", value: "Réponse rapide", detail: STORE.whatsappNumber, href: `https://wa.me/${STORE.whatsappNumber}` },
@@ -29,6 +30,8 @@ const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayC
 export default function Contact() {
   const reduce = useReducedMotion();
   const { t } = useLanguage();
+  usePageMeta({ title: "Contact — The Aviator", description: "Contactez The Aviator : WhatsApp, email et service client du lundi au vendredi de 9h à 18h. Livraison partout au Maroc, paiement à la livraison." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Contact", url: `${SITE_URL}/contact` }]));
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [website, setWebsite] = useState("");
   const [sent, setSent] = useState(false);

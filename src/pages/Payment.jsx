@@ -3,9 +3,12 @@ import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import Reveal from "@/components/storefront/Reveal";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 export default function Payment() {
   const { t } = useLanguage();
+  usePageMeta({ title: "Paiement à la livraison — The Aviator", description: "Payez à la livraison, en espèces, directement au livreur. Aucun paiement anticipé. Le paiement à la livraison est disponible partout au Maroc." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Paiement à la livraison", url: `${SITE_URL}/paiement` }]));
   return (
     <>
       <AnnouncementBar />

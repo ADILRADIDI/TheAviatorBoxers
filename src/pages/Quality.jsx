@@ -5,6 +5,7 @@ import { Image } from "@/components/ui/image";
 import { IMAGES } from "@/lib/assets";
 import { ShieldCheck, Award, Leaf, Gauge, Layers, Wind } from "lucide-react";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 const CERTS = [
   { icon: ShieldCheck, name: "GRS", full: "Global Recycled Standard", desc: "Certification garantissant l'utilisation de matériaux recyclés et le respect de normes sociales et environnementales tout au long de la chaîne de production." },
@@ -20,6 +21,8 @@ const SPECS = [
 
 export default function Quality() {
   const { t } = useLanguage();
+  usePageMeta({ title: "Qualité & certification — The Aviator", description: "Nos boxers : 95% coton premium et 5% Lycra, certifiés GRS et GOTS. Contrôle qualité à chaque étape pour un confort et un maintien parfaits." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Qualité & certification", url: `${SITE_URL}/qualite` }]));
   return (
     <>
       <AnnouncementBar />

@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cart-context";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import PageHeader from "@/components/storefront/PageHeader";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 const PACK_SIZE = 2;
 const PACK_DISCOUNT = 0.10;
@@ -24,6 +25,8 @@ export default function Packs() {
   const { addItem, applyCoupon, closeDrawer } = useCart();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  usePageMeta({ title: "Packs & offres — The Aviator", description: "Profitez de nos packs et de -10% sur les lots de boxers premium. Paiement à la livraison, livraison 24-48h partout au Maroc." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Packs & offres", url: `${SITE_URL}/packs` }]));
 
   const [selections, setSelections] = useState(Array(PACK_SIZE).fill(null));
   const [picking, setPicking] = useState(Array(PACK_SIZE).fill(false));

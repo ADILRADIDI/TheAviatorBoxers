@@ -4,9 +4,12 @@ import { SIZE_GUIDE } from "@/lib/store";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 export default function SizeGuide() {
   const { t } = useLanguage();
+  usePageMeta({ title: "Guide des tailles — The Aviator", description: "Trouvez votre taille idéale avec notre guide des tailles : tour de taille, hanches et conseils. Vous hésitez ? Choisissez la taille supérieure." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Guide des tailles", url: `${SITE_URL}/guide-des-tailles` }]));
   return (
     <>
       <AnnouncementBar />

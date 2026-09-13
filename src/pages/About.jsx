@@ -6,6 +6,7 @@ import Reveal from "@/components/storefront/Reveal";
 import { IMAGES } from "@/lib/assets";
 import { Target, Eye, Heart, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 const VALUES = [
   { icon: Target, title: "Exigence", text: "Des standards élevés à chaque étape, du tissu à la finition." },
@@ -17,6 +18,8 @@ const VALUES = [
 export default function About() {
   const reduce = useReducedMotion();
   const { t } = useLanguage();
+  usePageMeta({ title: "À propos — The Aviator", description: "L'histoire de The Aviator : des boxers premium pour hommes, inspirés par l'exigence de l'aéronautique. 95% coton, 5% Lycra. Fabriqué avec soin." });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "À propos", url: `${SITE_URL}/a-propos` }]));
   return (
     <>
       <AnnouncementBar />

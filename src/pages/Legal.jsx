@@ -2,6 +2,7 @@ import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { STORE } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 const CGV = [
   { title: "Article 1 — Objet", text: "Les présentes conditions générales de vente régissent les relations entre The Aviator et tout client effectuant un achat sur notre site ou via WhatsApp. Toute commande implique l'acceptation des présentes conditions." },
@@ -30,6 +31,14 @@ export default function Legal({ type = "cgv" }) {
   const { t } = useLanguage();
   const title = isCGV ? t("Conditions générales de vente") : t("Politique de confidentialité");
   const eyebrow = t("Legal");
+  usePageMeta({
+    title: `${isCGV ? "Conditions générales de vente" : "Politique de confidentialité"} — The Aviator`,
+    description: isCGV ? "Conditions générales de vente de The Aviator : commande, prix en MAD, paiement à la livraison, livraison 24-48h et retours sous 7 jours au Maroc." : "Politique de confidentialité de The Aviator : quelles données nous collectons, comment nous les utilisons et vos droits."
+  });
+  useJsonLd(breadcrumbJsonLd([
+    { name: "Accueil", url: SITE_URL },
+    { name: isCGV ? "Conditions générales de vente" : "Politique de confidentialité", url: `${SITE_URL}/${isCGV ? "cgv" : "confidentialite"}` },
+  ]));
 
   return (
     <>

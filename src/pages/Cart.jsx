@@ -6,11 +6,13 @@ import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useCart, lineKey } from "@/lib/cart-context";
 import { formatPrice, STORE, validateCoupon, computeDiscount } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
+import { usePageMeta } from "@/lib/seo";
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, subtotal, coupon, applyCoupon, removeCoupon } = useCart();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  usePageMeta({ title: "Panier — The Aviator", description: "Votre panier The Aviator : choisissez vos boxers premium. Paiement à la livraison partout au Maroc.", noindex: true });
 
   const [code, setCode] = useState("");
   const [couponMsg, setCouponMsg] = useState("");

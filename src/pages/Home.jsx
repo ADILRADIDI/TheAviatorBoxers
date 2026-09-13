@@ -10,10 +10,11 @@ import ReviewsSection from "@/components/home/ReviewsSection";
 import FAQSection from "@/components/home/FAQSection";
 import Newsletter from "@/components/home/Newsletter";
 import WhatsAppCTA from "@/components/home/WhatsAppCTA";
-import { usePageMeta } from "@/lib/seo";
+import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL, FALLBACK_TITLE } from "@/lib/seo";
 
 export default function Home() {
-  usePageMeta({});
+  usePageMeta({ title: FALLBACK_TITLE, type: "website" });
+  useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }]));
   return (
     <>
       <AnnouncementBar />

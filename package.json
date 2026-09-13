@@ -5,6 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@10.26.1",
   "scripts": {
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "prebuild": "node scripts/generate-sitemap.mjs",
     "dev": "vite",
     "dev:api": "pnpm --filter @aviator/api dev",
     "dev:worker": "pnpm --filter @aviator/worker dev",
