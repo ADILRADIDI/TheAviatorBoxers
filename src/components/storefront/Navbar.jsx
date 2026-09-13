@@ -1,27 +1,26 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Menu, X, ShoppingBag, Search } from "lucide-react";
-import { LogoLockup } from "./Logo";
 import { useCart } from "@/lib/cart-context";
 import { STORE } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language";
 
-const NAV_LINKS = {
-  fr: ["Collection", "Packs", "Qualité", "À propos", "Contact"],
-  darija: ["المنتوجات", "الباكات", "الجودة", "علينا", "تواصل معنا"],
-};
-const NAV_PATHS = ["/collection", "/packs", "/qualite", "/a-propos", "/contact"];
+const NAV_PATHS = ["/collection", "/a-propos", "/packs", "/qualite", "/contact"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { itemCount, openDrawer } = useCart();
   const location = useLocation();
+  const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const { language, setLanguage } = useLanguage();
-  const navLinks = NAV_PATHS.map((to, index) => ({ to, label: NAV_LINKS[language][index] }));
+  const { language, setLanguage, t } = useLanguage();
+  const labels = language === "darija"
+    ? ["المجموعة", "من نحن", "الباك", "الجودة", "اتصل بنا"]
+    : ["Collection", "À propos", "Packs", "Qualité", "Contact"];
+  const navLinks = NAV_PATHS.map((to, index) => ({ to, label: labels[index] }));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -47,19 +46,19 @@ export default function Navbar() {
           scrolled ? "border-border bg-background/95 backdrop-blur-md" : "border-transparent bg-background",
         )}
       >
-        <nav className="container-edge flex h-16 items-center justify-between gap-4 lg:h-[68px]">
+        <nav className="container-edge flex h-24 items-center justify-between gap-4 lg:h-28">
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileOpen(true)}
             className="lg:hidden -ml-2 p-2 text-navy"
-            aria-label="Ouvrir le menu"
+            aria-label={t("Ouvrir le menu")}
           >
             <Menu className="h-5 w-5" />
           </button>
 
           {/* Logo */}
           <Link to="/" className="shrink-0" aria-label="The Aviator — Accueil">
-            <LogoLockup />
+            <img src="/logo.svg" alt="The Aviator" className="h-20 aspect-square w-auto rounded-2xl bg-navy p-2 object-contain shadow-md ring-1 ring-white/15 lg:h-24" />
           </Link>
 
           {/* Desktop nav */}
@@ -83,23 +82,21 @@ export default function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-1.5">
-            <div className="hidden items-center border border-border text-[10px] font-bold uppercase tracking-wider sm:flex" aria-label="Choisir la langue">
+            <div className="hidden items-center border border-border text-[10px] font-bold uppercase tracking-wider sm:flex" aria-label={t("Choisir la langue")}>
               <button onClick={() => setLanguage("fr")} className={cn("px-2 py-1.5", language === "fr" ? "bg-navy text-white" : "text-muted-foreground")}>FR</button>
               <button onClick={() => setLanguage("darija")} className={cn("px-2 py-1.5", language === "darija" ? "bg-navy text-white" : "text-muted-foreground")}>دارجة</button>
             </div>
             <button
-              onClick={() => {
-                window.location.href = "/collection?q=";
-              }}
+              onClick={() => navigate("/collection?q=")}
               className="hidden sm:flex p-2 text-navy transition-colors hover:text-muted-foreground"
-              aria-label="Rechercher"
+              aria-label={t("Rechercher")}
             >
               <Search className="h-[18px] w-[18px]" />
             </button>
             <button
               onClick={openDrawer}
               className="relative p-2 text-navy transition-colors hover:text-muted-foreground"
-              aria-label={`Panier (${itemCount} articles)`}
+              aria-label={`${t("Panier")} (${itemCount})`}
             >
               <ShoppingBag className="h-[18px] w-[18px]" />
               {itemCount > 0 && (
@@ -117,7 +114,7 @@ export default function Navbar() {
         {mobileOpen && (
           <>
             <motion.div
-              initial={reduce ? { opacity: 0 } : { opacity: 0 }}
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0 }}
               transition={{ duration: 0.2 }}
@@ -131,9 +128,9 @@ export default function Navbar() {
               transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="fixed left-0 top-0 z-50 flex h-full w-[82%] max-w-sm flex-col bg-background lg:hidden"
             >
-              <div className="flex h-16 items-center justify-between border-b px-5">
-                <LogoLockup />
-                <button onClick={() => setMobileOpen(false)} className="p-2 text-navy" aria-label="Fermer le menu">
+              <div className="flex h-28 items-center justify-between border-b px-5">
+                <img src="/logo.svg" alt="The Aviator" className="h-24 aspect-square w-auto rounded-2xl bg-navy p-2 object-contain shadow-md ring-1 ring-white/15" />
+                <button onClick={() => setMobileOpen(false)} className="p-2 text-navy" aria-label={t("Fermer le menu")}>
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -155,10 +152,10 @@ export default function Navbar() {
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 bg-navy py-3.5 text-sm font-semibold uppercase tracking-[0.15em] text-white"
                 >
-                  Commander via WhatsApp
+                  {t("Commander via WhatsApp")}
                 </a>
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  Livraison 24-48h · Paiement à la livraison
+                  {t("Livraison 24-48h · Paiement à la livraison")}
                 </p>
               </div>
             </motion.div>

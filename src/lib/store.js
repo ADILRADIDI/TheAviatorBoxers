@@ -1,11 +1,10 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 async function api(path, options) {
   const response = await fetch(`${API_URL}${path}`, { headers: { "Content-Type": "application/json" }, ...options });
   if (!response.ok) throw new Error(`API request failed: ${response.status}`);
   return response.json();
 }
-
 
 // ============================================================================
 // BRAND CONFIGURATION
@@ -44,6 +43,40 @@ export const MOROCCAN_CITIES = [
 ];
 
 // Default shipping used as fallback if no zone matches
+export const DEFAULT_SITE_SETTINGS = {
+  store_name: "THE AVIATOR",
+  tagline: "Le confort, avec une autre dimension.",
+  description:
+    "Boxers premium pour hommes, conçus pour offrir confort, maintien et style au quotidien.",
+  email: "contact@theaviatorboxer.com",
+  phone: "06 91 57 31 92",
+  whatsapp_number: "212691573192",
+  address: "Casablanca, Maroc",
+  instagram: "https://instagram.com/theaviatorboxer",
+  facebook: "https://facebook.com/theaviatorboxer",
+  tiktok: "",
+  youtube: "",
+  trust_items: [
+    { title: "Tissus premium", subtitle: "95% coton / 5% Lycra" },
+    { title: "Livraison 24-48h", subtitle: "Partout au Maroc" },
+    { title: "Paiement à la livraison", subtitle: "Payez à réception" },
+    { title: "Qualité contrôlée", subtitle: "Normes internationales" },
+  ],
+  footer_columns: [
+    { title: "Boutique", links: [{ label: "Collection", to: "/collection" }, { label: "Composer un pack", to: "/packs" }, { label: "Guide des tailles", to: "/guide-des-tailles" }, { label: "Avis clients", to: "/avis" }] },
+    { title: "Informations", links: [{ label: "À propos", to: "/a-propos" }, { label: "Qualité & certifications", to: "/qualite" }, { label: "Livraison & retours", to: "/livraison-retours" }, { label: "Paiement", to: "/paiement" }] },
+    { title: "Aide", links: [{ label: "FAQ", to: "/faq" }, { label: "Contact", to: "/contact" }, { label: "Conditions générales", to: "/cgv" }, { label: "Confidentialité", to: "/confidentialite" }] },
+  ],
+};
+
+export async function fetchSiteSettings() {
+  try {
+    return { ...DEFAULT_SITE_SETTINGS, ...(await api("/api/settings")) };
+  } catch {
+    return DEFAULT_SITE_SETTINGS;
+  }
+}
+
 export const DEFAULT_SHIPPING = { fee: 35, delivery_time: "24-48h" };
 
 // ============================================================================
@@ -118,8 +151,12 @@ export function computeDiscount(coupon, subtotal, shippingFee) {
 // ============================================================================
 
 export function formatPrice(value) {
-  const n = Number(value || 0);
-  return `${n.toLocaleString("fr-FR")} ${STORE.currencySymbol}`;
+  return `${formatNumber(value)} ${STORE.currencySymbol}`;
+}
+
+export function formatNumber(value) {
+  const n = typeof value === "number" && Number.isFinite(value) ? value : Number(value || 0);
+  return n.toLocaleString("fr-FR");
 }
 
 export function discountPercent(price, compareAt) {

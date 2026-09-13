@@ -48,6 +48,8 @@ export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  description: text("description"),
+  categoryId: uuid("category_id").references(() => categories.id),
   price: integer("price_cents").notNull(),
   stock: integer("stock").notNull().default(0),
   images: jsonb("images").notNull().default([]),
@@ -237,4 +239,10 @@ export const mediaAssets = pgTable("media_assets", {
   url: text("url").notNull(),
   altText: text("alt_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const siteSettings = pgTable("site_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

@@ -10,6 +10,8 @@ import { fetchProductBySlug, fetchProducts, fetchReviews, formatPrice, discountP
 import { useCart } from "@/lib/cart-context";
 import { whatsappContactUrl } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+import { usePageMeta, useJsonLd, productJsonLd } from "@/lib/seo";
+import { useLanguage } from "@/lib/language";
 
 const TABS = ["Description", "Composition & entretien", "Livraison & retours"];
 
@@ -19,6 +21,7 @@ export default function ProductDetail() {
   const { data: allProducts } = useAsync(() => fetchProducts(), []);
   const { data: reviews } = useAsync(() => (product ? fetchReviews(product.id) : Promise.resolve([])), [product?.id]);
   const { addItem } = useCart();
+  const { t } = useLanguage();
 
   const [activeImg, setActiveImg] = useState(0);
   const [size, setSize] = useState("");
@@ -26,11 +29,17 @@ export default function ProductDetail() {
   const [tab, setTab] = useState(0);
   const [activePoint, setActivePoint] = useState(0);
 
+  usePageMeta({
+    title: product ? `${product.name} — The Aviator` : undefined,
+    description: product ? `${product.name} · ${product.price} DH · ${product.short_description || product.description || "Boxer premium The Aviator"}` : undefined,
+  });
+  useJsonLd(product ? productJsonLd(product) : null);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <AnnouncementBar />
-        <div className="container-edge py-24 text-center text-muted-foreground">Chargement...</div>
+        <div className="container-edge py-24 text-center text-muted-foreground">{t("Chargement...")}</div>
       </div>
     );
   }
@@ -40,8 +49,8 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-background">
         <AnnouncementBar />
         <div className="container-edge py-24 text-center">
-          <h1 className="font-display text-2xl font-bold text-navy">Produit introuvable</h1>
-          <Link to="/collection" className="mt-4 inline-block text-sm underline">Voir la collection</Link>
+          <h1 className="font-display text-2xl font-bold text-navy">{t("Produit introuvable")}</h1>
+          <Link to="/collection" className="mt-4 inline-block text-sm underline">{t("Voir la collection")}</Link>
         </div>
       </div>
     );
@@ -50,12 +59,12 @@ export default function ProductDetail() {
   const images = product.images?.length ? product.images : [];
   const currentImage = images[activeImg] || images[0];
   const productSizes = product.sizes?.length ? product.sizes : SIZES;
-  const percentage = discountPercent(product.price, product.compare_at_price);
+  const defaultDesc = t("Conçu pour offrir une aisance irréprochable au quotidien, ce boxer The Aviator allie maintien optimal, douceur durable et finitions de précision adaptées au climat marocain.");
   const tabContent = tab === 0
-    ? product.description || product.short_description
+    ? product.description || product.short_description || defaultDesc || t("Description")
     : tab === 1
-      ? "Confection soigneuse avec des matières sélectionnées pour un confort quotidien et une tenue durable."
-      : "Livraison partout au Maroc en 24 à 48 heures. Paiement à la livraison disponible.";
+      ? t("95% Coton peigné haute qualité, 5% Élasthanne Lycra. Lavage en machine à 30°C. Ne pas javelliser. Séchage à l'air libre conseillé.")
+      : t("Livraison rapide partout au Maroc en 24 à 48 heures. Paiement en espèces à la livraison. Possibilité d'échange de taille sous 7 jours.");
   const addToCart = () => {
     addItem({
       productId: product.id,
@@ -86,7 +95,7 @@ export default function ProductDetail() {
               ))}
             </div>
             <div className="aspect-[3/4] flex-1 overflow-hidden bg-muted">
-              {currentImage ? <Image src={currentImage} alt={product.name} fittingType="fill" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-muted-foreground">Aucune image</div>}
+              {currentImage ? <Image src={currentImage} alt={product.name} fittingType="fill" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-muted-foreground">{t("Aucune image")}</div>}
             </div>
           </div>
 
@@ -95,34 +104,34 @@ export default function ProductDetail() {
             <h1 className="mt-3 font-display text-3xl font-bold text-navy md:text-4xl">{product.name}</h1>
             <div className="mt-4 flex items-center gap-3">
               <StarRating value={product.rating || 0} count={product.review_count} />
-              <span className="text-sm text-muted-foreground">{product.review_count || 0} avis</span>
+              <span className="text-sm text-muted-foreground">{product.review_count || 0} {t("avis")}</span>
             </div>
             <div className="mt-6 flex items-baseline gap-3">
               <span className="text-2xl font-bold">{formatPrice(product.price)}</span>
-              {product.compare_at_price > product.price && <><span className="text-sm text-muted-foreground line-through">{formatPrice(product.compare_at_price)}</span><span className="bg-accent-lime px-2 py-1 text-xs font-bold">-{percentage}%</span></>}
+              {product.compare_at_price > product.price && <><span className="text-sm text-muted-foreground line-through">{formatPrice(product.compare_at_price)}</span><span className="bg-accent-lime px-2 py-1 text-xs font-bold">-{discountPercent(product.price, product.compare_at_price)}%</span></>}
             </div>
-            <p className="mt-6 leading-relaxed text-muted-foreground">{product.description || product.short_description}</p>
+            <p className="mt-6 leading-relaxed text-muted-foreground">{t(product.description || product.short_description || defaultDesc)}</p>
 
             <div className="mt-8">
-              <div className="mb-3 flex items-center justify-between"><span className="text-sm font-semibold">Taille</span><Link to="/guide-des-tailles" className="text-xs underline">Guide des tailles</Link></div>
+              <div className="mb-3 flex items-center justify-between"><span className="text-sm font-semibold">{t("Taille")}</span><Link to="/guide-des-tailles" className="text-xs underline">{t("Guide des tailles")}</Link></div>
               <div className="flex flex-wrap gap-2">{productSizes.map((itemSize) => <button key={itemSize} onClick={() => setSize(itemSize)} className={cn("min-w-12 border px-4 py-2 text-sm", (size || productSizes[0]) === itemSize ? "border-navy bg-navy text-white" : "border-border")}>{itemSize}</button>)}</div>
             </div>
 
             <div className="mt-6 flex gap-3">
-              <div className="flex items-center border border-border"><button aria-label="Diminuer la quantité" onClick={() => setQty(Math.max(1, qty - 1))} className="p-3"><Minus className="h-4 w-4" /></button><span className="w-8 text-center text-sm">{qty}</span><button aria-label="Augmenter la quantité" onClick={() => setQty(Math.min(product.stock || 1, qty + 1))} className="p-3"><Plus className="h-4 w-4" /></button></div>
-              <button onClick={addToCart} disabled={!product.stock} className="flex flex-1 items-center justify-center gap-2 bg-navy px-5 py-3 text-sm font-semibold uppercase tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-50"><ShoppingBag className="h-4 w-4" />{product.stock ? "Ajouter au panier" : "Rupture de stock"}</button>
+              <div className="flex items-center border border-border"><button aria-label={t("Diminuer")} onClick={() => setQty(Math.max(1, qty - 1))} className="p-3"><Minus className="h-4 w-4" /></button><span className="w-8 text-center text-sm">{qty}</span><button aria-label={t("Augmenter")} onClick={() => setQty(Math.min(product.stock || 1, qty + 1))} className="p-3"><Plus className="h-4 w-4" /></button></div>
+              <button onClick={addToCart} disabled={!product.stock} className="flex flex-1 items-center justify-center gap-2 bg-navy px-5 py-3 text-sm font-semibold uppercase tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-50"><ShoppingBag className="h-4 w-4" />{product.stock ? t("Ajouter au panier") : t("Rupture de stock")}</button>
             </div>
-            <a href={whatsappContactUrl(`Bonjour, je suis intéressé par ${product.name}`)} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 border border-navy px-5 py-3 text-sm font-semibold text-navy"><MessageCircle className="h-4 w-4" />Commander via WhatsApp</a>
-            <div className="mt-8 grid grid-cols-3 gap-3 border-t border-border pt-5 text-center text-xs text-muted-foreground"><span><Truck className="mx-auto mb-2 h-4 w-4" />Livraison 24-48h</span><span><Check className="mx-auto mb-2 h-4 w-4" />Qualité premium</span><span><RefreshCw className="mx-auto mb-2 h-4 w-4" />Retours faciles</span></div>
+            <a href={whatsappContactUrl(`Bonjour, je suis intéressé par ${product.name}`)} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 border border-navy px-5 py-3 text-sm font-semibold text-navy"><MessageCircle className="h-4 w-4" />{t("Commander via WhatsApp")}</a>
+            <div className="mt-8 grid grid-cols-3 gap-3 border-t border-border pt-5 text-center text-xs text-muted-foreground"><span><Truck className="mx-auto mb-2 h-4 w-4" />{t("Livraison 24-48h")}</span><span><Check className="mx-auto mb-2 h-4 w-4" />{t("Qualité premium")}</span><span><RefreshCw className="mx-auto mb-2 h-4 w-4" />{t("Retours faciles")}</span></div>
           </div>
         </div>
 
         <section className="mt-16 border-y border-border py-10 lg:py-14">
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
             <div>
-              <span className="label-eyebrow">Détails du produit</span>
-              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Pensé dans chaque détail.</h2>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">Une coupe confortable, des matières choisies et des finitions conçues pour accompagner vos journées.</p>
+              <span className="label-eyebrow">{t("Détails du produit")}</span>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">{t("Pensé dans chaque détail.")}</h2>
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">{t("Une coupe confortable, des matières choisies et des finitions conçues pour accompagner vos journées.")}</p>
             </div>
             <div className="divide-y divide-border border-y border-border">
               {[
@@ -134,10 +143,10 @@ export default function ProductDetail() {
                 <div key={number}>
                   <button onClick={() => setActivePoint(activePoint === index ? -1 : index)} className="flex w-full items-center gap-4 py-5 text-left" aria-expanded={activePoint === index}>
                     <span className="font-mono text-xs text-muted-foreground">{number}</span>
-                    <span className="flex-1 font-semibold text-navy">{title}</span>
+                    <span className="flex-1 font-semibold text-navy">{t(title)}</span>
                     <ChevronDown className={cn("h-4 w-4 transition-transform", activePoint === index && "rotate-180")} />
                   </button>
-                  {activePoint === index && <p className="pb-5 pl-10 pr-8 text-sm leading-relaxed text-muted-foreground">{detail}</p>}
+                  {activePoint === index && <p className="pb-5 pl-10 pr-8 text-sm leading-relaxed text-muted-foreground">{t(detail)}</p>}
                 </div>
               ))}
             </div>
@@ -145,12 +154,12 @@ export default function ProductDetail() {
         </section>
 
         <div className="mt-16 border-t border-border pt-8">
-          <div className="flex gap-6 border-b border-border">{TABS.map((label, index) => <button key={label} onClick={() => setTab(index)} className={cn("pb-3 text-sm", tab === index ? "border-b-2 border-navy font-semibold text-navy" : "text-muted-foreground")}>{label}</button>)}</div>
+          <div className="flex gap-6 border-b border-border">{TABS.map((label, index) => <button key={label} onClick={() => setTab(index)} className={cn("pb-3 text-sm", tab === index ? "border-b-2 border-navy font-semibold text-navy" : "text-muted-foreground")}>{t(label)}</button>)}</div>
           <p className="max-w-3xl py-6 leading-relaxed text-muted-foreground">{tabContent}</p>
-          {reviews?.length > 0 && <div className="border-t border-border pt-6"><h2 className="font-display text-xl font-bold text-navy">Avis clients</h2><div className="mt-4 grid gap-4 md:grid-cols-2">{reviews.slice(0, 4).map((review) => <div key={review.id} className="border border-border p-4"><StarRating value={review.rating} /><p className="mt-2 text-sm text-muted-foreground">{review.comment}</p></div>)}</div></div>}
+          {reviews?.length > 0 && <div className="border-t border-border pt-6"><h2 className="font-display text-xl font-bold text-navy">{t("Avis clients")}</h2><div className="mt-4 grid gap-4 md:grid-cols-2">{reviews.slice(0, 4).map((review) => <div key={review.id} className="border border-border p-4"><StarRating value={review.rating} /><p className="mt-2 text-sm text-muted-foreground">{review.comment}</p></div>)}</div></div>}
         </div>
 
-        {allProducts?.length > 0 && <section className="mt-16"><h2 className="font-display text-2xl font-bold text-navy">Vous aimerez aussi</h2><div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">{allProducts.filter((item) => item.id !== product.id).slice(0, 4).map((item, index) => <ProductCard key={item.id} product={item} index={index} />)}</div></section>}
+        {allProducts?.length > 0 && <section className="mt-16"><h2 className="font-display text-2xl font-bold text-navy">{t("Vous aimerez aussi")}</h2><div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">{allProducts.filter((item) => item.id !== product.id).slice(0, 4).map((item, index) => <ProductCard key={item.id} product={item} index={index} />)}</div></section>}
       </main>
     </div>
   );

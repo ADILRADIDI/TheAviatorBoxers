@@ -8,4 +8,5 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile-320", use: { ...devices["Desktop Chrome"], viewport: { width: 320, height: 568 }, isMobile: true } },
   ],
+  workers: 1,
 });

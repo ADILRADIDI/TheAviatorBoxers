@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { AR } from "./translations";
 
 const STORAGE_KEY = "aviator_language";
+
+export const LANGUAGES = ["fr", "darija"];
 
 export function useLanguage() {
   const [language, setLanguageState] = useState(() => {
@@ -28,5 +31,11 @@ export function useLanguage() {
     return () => window.removeEventListener("aviator-language-change", onLanguageChange);
   }, []);
 
-  return { language, setLanguage };
+  const t = (key) => {
+    if (typeof key !== "string" || !key) return key;
+    if (language !== "darija") return key;
+    return AR[key] || key;
+  };
+
+  return { language, setLanguage, t };
 }

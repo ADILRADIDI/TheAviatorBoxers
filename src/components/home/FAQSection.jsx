@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Reveal from "@/components/storefront/Reveal";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/lib/language";
 
 const FAQS = [
   { q: "Quels sont les délais de livraison ?", a: "La livraison s'effectue sous 24 à 48h dans toutes les villes du Maroc. Vous recevrez une confirmation dès l'expédition de votre commande." },
@@ -14,13 +15,14 @@ const FAQS = [
 
 export default function FAQSection() {
   const [open, setOpen] = useState(0);
+  const { t } = useLanguage();
   return (
     <section className="bg-secondary py-20 lg:py-28">
       <div className="container-edge max-w-3xl">
         <Reveal className="text-center">
-          <span className="label-eyebrow">Questions fréquentes</span>
+          <span className="label-eyebrow">{t("Questions fréquentes")}</span>
           <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Tout ce que vous devez savoir
+            {t("Tout ce que vous devez savoir")}
           </h2>
         </Reveal>
 
@@ -32,7 +34,7 @@ export default function FAQSection() {
                 className="flex w-full items-center justify-between gap-4 py-5 text-left"
                 aria-expanded={open === i}
               >
-                <span className="text-sm font-semibold sm:text-base">{faq.q}</span>
+                <span className="text-sm font-semibold sm:text-base">{t(faq.q)}</span>
                 <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open === i ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence initial={false}>
@@ -44,7 +46,7 @@ export default function FAQSection() {
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     className="overflow-hidden"
                   >
-                    <p className="pb-5 text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
+                    <p className="pb-5 text-sm leading-relaxed text-muted-foreground">{t(faq.a)}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -54,7 +56,7 @@ export default function FAQSection() {
 
         <Reveal delay={0.2} className="mt-8 text-center">
           <Link to="/faq" className="text-sm font-semibold uppercase tracking-[0.12em] text-navy underline underline-offset-4 hover:text-accent-lime">
-            Voir toutes les questions
+            {t("Voir toutes les questions")}
           </Link>
         </Reveal>
       </div>

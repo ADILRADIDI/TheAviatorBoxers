@@ -4,23 +4,25 @@ import ProductCard from "@/components/storefront/ProductCard";
 import Reveal from "@/components/storefront/Reveal";
 import { useAsync } from "@/lib/useAsync";
 import { fetchProducts } from "@/lib/store";
+import { useLanguage } from "@/lib/language";
 
 export default function FeaturedCollection() {
   const { data: products, loading, error } = useAsync(() => fetchProducts(), []);
+  const { t } = useLanguage();
 
   return (
     <section className="py-20 lg:py-28">
       <div className="container-edge">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
           <Reveal>
-            <span className="label-eyebrow">La collection</span>
+            <span className="label-eyebrow">{t("La collection")}</span>
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              Découvrez nos produits
+              {t("Découvrez nos produits")}
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
             <Link to="/collection" className="group inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-navy">
-              Voir tout
+              {t("Voir tout")}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Reveal>
@@ -38,7 +40,7 @@ export default function FeaturedCollection() {
           </div>
         ) : error ? (
           <div className="mt-10 rounded border border-destructive/30 bg-destructive/5 p-6 text-center text-sm text-destructive">
-            Impossible de charger les produits. Veuillez réessayer.
+            {t("Impossible de charger les produits. Veuillez réessayer.")}
           </div>
         ) : products && products.length > 0 ? (
           <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 lg:grid-cols-4">
@@ -47,7 +49,7 @@ export default function FeaturedCollection() {
             ))}
           </div>
         ) : (
-          <p className="mt-10 text-center text-sm text-muted-foreground">Aucun produit disponible pour le moment.</p>
+          <p className="mt-10 text-center text-sm text-muted-foreground">{t("Aucun produit disponible pour le moment.")}</p>
         )}
       </div>
     </section>

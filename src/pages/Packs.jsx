@@ -1,24 +1,34 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Image } from "@/components/ui/image";
-import { Check, Plus, X, ShoppingBag } from "lucide-react";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
+import { useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowRight, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAsync } from "@/lib/useAsync";
-import { fetchProducts, formatPrice, SIZES } from "@/lib/store";
+import { fetchProducts, formatPrice, SIZES, validateCoupon } from "@/lib/store";
+import { Image } from "@/components/ui/image";
 import { useCart } from "@/lib/cart-context";
-import { cn } from "@/lib/utils";
+import AnnouncementBar from "@/components/storefront/AnnouncementBar";
+import PageHeader from "@/components/storefront/PageHeader";
+import { useLanguage } from "@/lib/language";
 
 const PACK_SIZE = 2;
-const PACK_DISCOUNT = 0.10; // 10% off when completing a pack
+const PACK_DISCOUNT = 0.10;
+
+const fadeUp = {
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+};
 
 export default function Packs() {
   const { data: products, loading } = useAsync(() => fetchProducts({ category: "boxer" }), []);
-  const { addItem, applyCoupon } = useCart();
+  const { addItem, applyCoupon, closeDrawer } = useCart();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  // selections: array of { product, size } with length PACK_SIZE
   const [selections, setSelections] = useState(Array(PACK_SIZE).fill(null));
+  const [picking, setPicking] = useState(Array(PACK_SIZE).fill(false));
+
+  const available = useMemo(() => (products?.length ? products.filter((p) => p.stock > 0) : []), [products]);
 
   const filledCount = selections.filter(Boolean).length;
   const subtotal = selections.reduce((sum, s) => sum + (s ? s.product.price : 0), 0);
@@ -26,210 +36,226 @@ export default function Packs() {
   const total = subtotal - discount;
   const allComplete = filledCount === PACK_SIZE && selections.every((s) => s?.size);
 
-  const selectProduct = (product) => {
-    const emptyIdx = selections.findIndex((s) => !s);
-    if (emptyIdx === -1) return;
+  const selectProduct = (index, product) => {
+    if (!product) return;
     const next = [...selections];
-    next[emptyIdx] = { product, size: "" };
+    next[index] = { product, size: null };
     setSelections(next);
   };
 
-  const setSize = (idx, size) => {
-    const next = [...selections];
-    if (next[idx]) next[idx] = { ...next[idx], size };
-    setSelections(next);
+  const startPick = (index) => setPicking((current) => current.map((value, i) => (i === index ? true : value)));
+  const chooseProduct = (index, product) => {
+    selectProduct(index, product);
+    setPicking((current) => current.map((value, i) => (i === index ? false : value)));
   };
 
-  const removeSlot = (idx) => {
+  const updateSize = (index, size) => {
     const next = [...selections];
-    next[idx] = null;
-    setSelections(next);
+    if (next[index]) {
+      next[index].size = size;
+      setSelections(next);
+    }
   };
 
-  const handleAddPack = () => {
+  const handleAddToCart = async () => {
     if (!allComplete) return;
-    selections.forEach((s) => {
-      addItem({
-        productId: s.product.id,
-        slug: s.product.slug,
-        name: s.product.name,
-        image: s.product.images?.[0],
-        price: s.product.price,
-        color: s.product.color_name,
-        size: s.size,
-        quantity: 1,
-        stock: s.product.stock,
-        category: "boxer",
+    const packItems = selections.map(({ product, size }) => ({
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      image: product.images?.[0],
+      price: product.price,
+      color: product.color_name,
+      category: product.category,
+      quantity: 1,
+      size,
+    }));
+    try {
+      const result = await validateCoupon("PACK10", subtotal, packItems);
+      if (!result.valid) throw new Error(result.message);
+      packItems.forEach((item) => {
+        addItem({ ...item, stock: item.stock ?? 999 });
       });
-    });
-    applyCoupon({ code: "PACK10", discount_type: "percentage", value: 10, description: "Pack 2 pièces" });
-    navigate("/panier");
+      applyCoupon(result.coupon);
+      closeDrawer();
+      navigate("/checkout");
+    } catch {
+      packItems.forEach((item) => {
+        addItem({ ...item, stock: item.stock ?? 999 });
+      });
+      closeDrawer();
+      navigate("/checkout");
+    }
   };
 
   return (
     <>
       <AnnouncementBar />
-      <div className="border-b border-border bg-navy text-white">
-        <div className="container-edge py-12 text-center lg:py-16">
-          <span className="label-eyebrow text-white/50">Pack signature</span>
-          <h1 className="mt-2 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Composez votre pack
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm text-white/60">
-            Choisissez {PACK_SIZE} couleurs et tailles. Profitez de -10% sur votre pack.
-          </p>
-        </div>
+      <PageHeader eyebrow={t("Le pack signature")} title={t("Composez votre pack")} subtitle={t("Choisissez vos couleurs, vos tailles, et profitez d'un tarif avantageux.")} />
+
+      <div className="relative overflow-hidden">
+        <motion.div className="pointer-events-none absolute left-[-120px] top-24 h-72 w-72 rounded-full bg-accent-lime/10 blur-3xl" {...fadeUp} transition={{ duration: 1 }} />
+        <motion.div className="pointer-events-none absolute right-[-140px] top-1/2 h-80 w-80 rounded-full bg-navy/10 blur-3xl" {...fadeUp} transition={{ duration: 1, delay: 0.15 }} />
       </div>
 
-      <div className="container-edge py-10 lg:py-14">
-        <div className="grid gap-10 lg:grid-cols-[1fr_380px] lg:gap-14">
-          {/* Product selection */}
-          <div>
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold">Choisissez vos boxers</h2>
-              <span className="text-sm text-muted-foreground">{filledCount}/{PACK_SIZE} sélectionnés</span>
-            </div>
-
-            {/* Progress */}
-            <div className="mb-8 flex gap-2">
-              {Array.from({ length: PACK_SIZE }).map((_, i) => (
-                <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
-                  <div className={cn("h-full transition-all duration-500", selections[i] ? "bg-accent-lime w-full" : "bg-transparent w-0")} />
-                </div>
-              ))}
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-[3/4] animate-pulse bg-muted" />)}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {products?.map((p) => {
-                  const selected = selections.some((s) => s?.product?.id === p.id);
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => selectProduct(p)}
-                      disabled={selected || filledCount >= PACK_SIZE || p.stock === 0}
-                      className={cn(
-                        "group relative aspect-[3/4] overflow-hidden border-2 bg-muted transition-all",
-                        selected ? "border-accent-lime opacity-50" : "border-transparent hover:border-navy",
-                        filledCount >= PACK_SIZE && !selected && "opacity-40",
-                        p.stock === 0 && "cursor-not-allowed opacity-50",
-                      )}
+      <div className="container-edge py-12 lg:py-16">
+        <div className="grid gap-10 lg:grid-cols-[1fr_340px]">
+          <div className="grid gap-6 sm:grid-cols-2">
+            {selections.map((sel, idx) => (
+              <motion.div
+                key={idx}
+                {...fadeUp}
+                transition={{ ...fadeUp.transition, delay: 0.08 * idx }}
+                className="border border-border bg-background p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="label-eyebrow">{t("Pièce")} {idx + 1}</p>
+                  {sel?.product && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-navy"
                     >
-                      {p.images?.[0] && <Image src={p.images[0]} alt={p.name} fittingType="fill" className="h-full w-full object-cover" />}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/90 to-transparent p-3">
-                        <p className="text-xs font-semibold text-white">{p.name}</p>
-                        <p className="text-xs text-white/70">{formatPrice(p.price)}</p>
-                      </div>
-                      {selected && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-accent-lime/20">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-lime text-navy">
-                            <Check className="h-5 w-5" />
-                          </span>
-                        </div>
-                      )}
-                      {!selected && filledCount < PACK_SIZE && p.stock > 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-navy/0 opacity-0 transition-all group-hover:bg-navy/20 group-hover:opacity-100">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-navy">
-                            <Plus className="h-5 w-5" />
-                          </span>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Summary sidebar */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="border border-border bg-background">
-              <div className="border-b border-border p-5">
-                <h2 className="font-display text-lg font-bold">Mon pack ({PACK_SIZE} pièces)</h2>
-              </div>
-
-              <div className="p-5">
-                <div className="space-y-4">
-                  {selections.map((s, i) => (
-                    <div key={i}>
-                      {s ? (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="border border-border p-3">
-                          <div className="flex gap-3">
-                            <div className="h-20 w-16 shrink-0 overflow-hidden bg-muted">
-                              {s.product.images?.[0] && <Image src={s.product.images[0]} alt="" fittingType="fill" className="h-full w-full object-cover" />}
-                            </div>
-                            <div className="flex flex-1 flex-col">
-                              <div className="flex justify-between">
-                                <p className="text-sm font-semibold">{s.product.name}</p>
-                                <button onClick={() => removeSlot(i)} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{formatPrice(s.product.price)}</p>
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {SIZES.map((sz) => (
-                                  <button
-                                    key={sz}
-                                    onClick={() => setSize(i, sz)}
-                                    className={cn("h-7 w-7 border text-[11px] font-medium transition-colors", s.size === sz ? "border-navy bg-navy text-white" : "border-border hover:border-navy")}
-                                  >
-                                    {sz}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ) : (
-                        <div className="flex items-center justify-center border border-dashed border-border p-6 text-center">
-                          <div>
-                            <Plus className="mx-auto h-5 w-5 text-muted-foreground" />
-                            <p className="mt-1 text-xs text-muted-foreground">Emplacement {i + 1}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Totals */}
-                <div className="mt-5 space-y-2 border-t border-border pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Sous-total</span>
-                    <span>{formatPrice(subtotal)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm text-accent-lime">
-                      <span>Pack -10%</span>
-                      <span>-{formatPrice(discount)}</span>
-                    </div>
+                      <Check className="h-3.5 w-3.5 text-accent-lime" /> {t("Sélectionnée")}
+                    </motion.span>
                   )}
-                  <div className="flex justify-between border-t border-border pt-2 text-base font-bold">
-                    <span>Total</span>
-                    <span>{formatPrice(total)}</span>
-                  </div>
                 </div>
 
-                <button
-                  onClick={handleAddPack}
-                  disabled={!allComplete}
-                  className="btn-shine mt-5 flex w-full items-center justify-center gap-2 bg-navy py-4 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ShoppingBag className="h-4 w-4" /> Ajouter le pack au panier
-                </button>
-                {!allComplete && (
-                  <p className="mt-2 text-center text-xs text-muted-foreground">
-                    {filledCount < PACK_SIZE ? `Sélectionnez ${PACK_SIZE - filledCount} produit(s) de plus` : "Choisissez la taille pour chaque produit"}
-                  </p>
+                {!sel?.product || picking[idx] ? (
+                  <motion.div key="picker" {...fadeUp} className="mt-4">
+                    <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                      {sel?.product ? t("Changer de produit") : t("Choisir un produit")}
+                    </p>
+                    {loading ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">{t("Chargement...")}</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {available.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => chooseProduct(idx, product)}
+                            className="group overflow-hidden rounded-lg border border-border bg-background text-left transition-all hover:border-navy hover:shadow-md"
+                            aria-label={`${product.name} — ${formatPrice(product.price)}`}
+                          >
+                            <div className="relative aspect-square overflow-hidden bg-muted">
+                              {product.images?.[0] ? (
+                                <Image src={product.images[0]} alt={product.name} fittingType="fill" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                              ) : (
+                                <span className="absolute inset-0 block" style={{ background: product.color_hex || "hsl(205 100% 18%)" }} />
+                              )}
+                              <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-accent-lime py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-navy opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <Check className="h-3 w-3" /> {t("Choisir")}
+                              </span>
+                            </div>
+                            <div className="space-y-0.5 p-2.5">
+                              <p className="truncate text-xs font-semibold">{product.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{formatPrice(product.price)}</p>
+                            </div>
+                          </button>
+                        ))}
+                        {!available.length && <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">{t("Aucun produit disponible.")}</p>}
+                      </div>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div key={sel.product.id} {...fadeUp} className="mt-4 space-y-4">
+                    <div className="flex w-full items-center gap-3 overflow-hidden rounded-lg border border-border bg-background">
+                      <div className="aspect-square w-20 shrink-0 overflow-hidden bg-muted">
+                        {sel.product.images?.[0] ? (
+                          <Image src={sel.product.images[0]} alt={sel.product.name} fittingType="fill" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="flex h-full items-center justify-center" style={{ background: sel.product.color_hex || "hsl(205 100% 18%)" }} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="truncate text-sm font-bold text-navy">{sel.product.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatPrice(sel.product.price)} · {sel.product.color_name}</p>
+                      </div>
+                      <button onClick={() => startPick(idx)} className="mr-3 shrink-0 rounded border border-border px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy transition-colors hover:border-navy hover:bg-navy hover:text-white">{t("Modifier")}</button>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{t("Taille")}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {SIZES.map((size) => (
+                          <motion.button
+                            key={size}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => updateSize(idx, size)}
+                            className={`h-9 w-9 border text-xs font-medium transition-all ${sel.size === size ? "border-navy bg-navy text-white shadow-md" : "border-border hover:border-navy hover:bg-navy/5"}`}
+                          >
+                            {size}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
-                <Link to="/collection" className="mt-3 block text-center text-xs font-medium uppercase tracking-wider text-muted-foreground underline underline-offset-4 hover:text-navy">
-                  Voir la collection
-                </Link>
-              </div>
-            </div>
+              </motion.div>
+            ))}
           </div>
+
+          <motion.aside
+            {...fadeUp}
+            transition={{ ...fadeUp.transition, delay: 0.2 }}
+            className="lg:sticky lg:top-24 lg:self-start"
+          >
+            <div className="border border-border bg-background p-6">
+              <h2 className="font-display text-lg font-bold">{t("Récapitulatif")}</h2>
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{t("Sous-total")}</span>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={subtotal}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.22 }}
+                    >
+                      {formatPrice(subtotal)}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+                <div className="flex justify-between text-accent-lime">
+                  <span>{t("Réduction")} (10%)</span>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={discount}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.22 }}
+                    >
+                      -{formatPrice(discount)}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+                <div className="flex justify-between border-t border-border pt-2 text-lg font-bold">
+                  <span>{t("Total")}</span>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={total}
+                      initial={{ opacity: 0, y: 8, color: "#C7D400" }}
+                      animate={{ opacity: 1, y: 0, color: "inherit" }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-navy"
+                    >
+                      {formatPrice(total)}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              </div>
+              <button
+                className="btn-shine mt-5 flex w-full items-center justify-center gap-2 bg-navy py-4 text-xs font-bold uppercase tracking-[0.18em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!allComplete}
+                onClick={handleAddToCart}
+              >
+                {t("Commander")} <ArrowRight className="h-4 w-4" />
+              </button>
+              <Link to="/collection" className="mt-4 block text-center text-xs font-medium uppercase tracking-wider text-muted-foreground underline underline-offset-4 hover:text-navy">{t("Continuer mes achats")}</Link>
+            </div>
+          </motion.aside>
         </div>
       </div>
     </>

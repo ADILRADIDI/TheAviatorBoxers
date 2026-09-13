@@ -1,14 +1,16 @@
 import { ShieldCheck, Award } from "lucide-react";
 import Reveal from "@/components/storefront/Reveal";
+import { useLanguage } from "@/lib/language";
 
 export default function Certifications() {
+  const { t } = useLanguage();
   return (
     <section className="bg-secondary py-20 lg:py-28">
       <div className="container-edge text-center">
         <Reveal>
-          <span className="label-eyebrow">Qualité certifiée</span>
+          <span className="label-eyebrow">{t("Qualité certifiée")}</span>
           <h2 className="mx-auto mt-2 max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Des standards internationaux pour un confort irréprochable
+            {t("Des standards internationaux pour un confort irréprochable")}
           </h2>
         </Reveal>
 
@@ -24,7 +26,7 @@ export default function Certifications() {
                 </div>
                 <p className="mt-4 font-display text-2xl font-bold">{cert.name}</p>
                 <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">{cert.full}</p>
-                <p className="mt-3 text-sm text-muted-foreground">{cert.desc}</p>
+                <p className="mt-3 text-sm text-muted-foreground">{t(cert.desc)}</p>
               </div>
             </Reveal>
           ))}
@@ -32,13 +34,13 @@ export default function Certifications() {
 
         <Reveal delay={0.2}>
           <div className="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            <span>Tissu premium</span>
+            <span>{t("Tissu premium")}</span>
             <span className="h-1 w-1 rounded-full bg-border" />
-            <span>Confortable à porter</span>
+            <span>{t("Confortable à porter")}</span>
             <span className="h-1 w-1 rounded-full bg-border" />
-            <span>Qualité contrôlée</span>
+            <span>{t("Qualité contrôlée")}</span>
             <span className="h-1 w-1 rounded-full bg-border" />
-            <span>Normes internationales</span>
+            <span>{t("Normes internationales")}</span>
           </div>
         </Reveal>
       </div>

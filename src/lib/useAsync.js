@@ -35,5 +35,5 @@ export function useAsync(fn, deps = []) {
     return cleanup;
   }, [run]);
 
-  return { data, loading, error, retry: run };
+  return { data, loading, error, refetch: run };
 }

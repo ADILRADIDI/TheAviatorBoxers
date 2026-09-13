@@ -127,6 +127,218 @@
   .text-accent-lime { color: hsl(var(--accent)); }
   .border-navy { border-color: hsl(var(--primary)); }
 
+  /* ------------------------------------------------------------------ 
+     ADMIN DESIGN SYSTEM
+     Black & white + brand navy (#00285E) + lime (#C7D400).
+     Scoped to the admin shell so the storefront is untouched.
+  ------------------------------------------------------------------ */
+  [data-admin-shell] {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 205 100% 18%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 205 100% 18%;
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 64 100% 42%;
+    --accent-foreground: 0 0% 8%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%;
+    --input: 0 0% 85%;
+    --ring: 205 100% 18%;
+    --chart-1: 205 100% 18%;
+    --chart-2: 64 100% 42%;
+    --chart-3: 0 0% 12%;
+    --chart-4: 0 0% 60%;
+    --chart-5: 190 55% 42%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 88%;
+    --sidebar-primary: 64 100% 42%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 13%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 64 100% 42%;
+  }
+
+  [data-admin-shell] .font-display { font-family: var(--font-heading); letter-spacing: -0.01em; }
+  [data-admin-shell] .border-border, [data-admin-shell] .border { border-color: hsl(0 0% 0% / 0.09); }
+
+  .admin-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(0 0% 0% / 0.09);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.04), 0 10px 30px -16px hsl(0 0% 0% / 0.12);
+  }
+
+  .admin-card-hover {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .admin-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: hsl(0 0% 0% / 0.18);
+    box-shadow: 0 2px 4px hsl(0 0% 0% / 0.05), 0 16px 40px -18px hsl(0 0% 0% / 0.18);
+  }
+
+  .admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.625rem 1rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+  }
+  .admin-btn:active { transform: translateY(1px); }
+  .admin-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+  .admin-btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.2), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  }
+  .admin-btn-primary:hover { background: hsl(205 100% 24%); }
+
+  .admin-btn-lime {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+  .admin-btn-lime:hover { background: hsl(64 100% 48%); box-shadow: 0 0 0 3px hsl(64 100% 42% / 0.25); }
+
+  .admin-btn-ghost {
+    background: transparent;
+    color: hsl(205 100% 18%);
+    border-color: hsl(0 0% 0% / 0.15);
+  }
+  .admin-btn-ghost:hover { background: hsl(0 0% 94%); }
+
+  .admin-btn-danger {
+    background: transparent;
+    color: hsl(var(--destructive));
+    border-color: hsl(0 72% 50% / 0.35);
+  }
+  .admin-btn-danger:hover { background: hsl(0 72% 50% / 0.07); }
+
+  .admin-input {
+    width: 100%;
+    border: 1px solid hsl(0 0% 0% / 0.14);
+    background: hsl(var(--card));
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: hsl(var(--foreground));
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .admin-input:focus {
+    outline: none;
+    border-color: hsl(205 100% 18%);
+    box-shadow: 0 0 0 3px hsl(205 100% 18% / 0.12);
+  }
+  .admin-input::placeholder { color: hsl(0 0% 60%); }
+
+  .admin-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: hsl(0 0% 42%);
+    margin-bottom: 0.375rem;
+  }
+
+  .admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid hsl(0 0% 0% / 0.1);
+    padding: 0.1875rem 0.6rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .admin-section-title { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.18em; color: hsl(0 0% 45%); }
+  .admin-h2 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; color: hsl(var(--primary)); }
+
+  .admin-list-scroll {
+    max-height: min(58vh, 560px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .admin-list-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: hsl(0 0% 97%);
+  }
+
+  .admin-sidebar-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: hsl(var(--sidebar-foreground) / 0.75);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .admin-sidebar-item:hover { background: hsl(0 0% 100% / 0.06); color: hsl(var(--sidebar-foreground)); }
+  .admin-sidebar-item-active {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-weight: 700;
+    box-shadow: 0 0 0 1px hsl(0 0% 0% / 0.2), 0 6px 18px -6px hsl(64 100% 42% / 0.4);
+  }
+  .admin-sidebar-item-active:hover { background: hsl(64 100% 48%); color: hsl(var(--accent-foreground)); }
+
+  @keyframes admin-fade-up {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .admin-fade-up { animation: admin-fade-up 0.4s ease both; }
+
+  @keyframes admin-pop {
+    0% { opacity: 0; transform: scale(0.94); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .admin-pop { animation: admin-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  @keyframes admin-shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  .admin-skeleton {
+    border-radius: 0.5rem;
+    background: linear-gradient(90deg, hsl(0 0% 92%) 25%, hsl(0 0% 96%) 50%, hsl(0 0% 92%) 75%);
+    background-size: 800px 100%;
+    animation: admin-shimmer 1.4s infinite linear;
+  }
+
+  @keyframes admin-marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .admin-marquee { animation: admin-marquee 26s linear infinite; }
+
   .mask-fade-b {
     -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
     mask-image: linear-gradient(to bottom, black 60%, transparent 100%);

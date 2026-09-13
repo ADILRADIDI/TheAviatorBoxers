@@ -13,7 +13,9 @@ export function permissionFor(url: string, method: string) {
   if (resource === "coupons") return method === "GET" ? "discounts.view" : method === "POST" ? "discounts.create" : method === "DELETE" ? "discounts.delete" : "discounts.update";
   if (resource === "promotions") return method === "GET" ? "promotions.view" : method === "POST" ? "promotions.create" : method === "DELETE" ? "promotions.delete" : "promotions.update";
   if (resource === "cms") return method === "GET" ? "cms.view" : method === "POST" ? "cms.create" : method === "DELETE" ? "cms.delete" : "cms.update";
-  if (resource === "media") return method === "GET" ? "media.view" : method === "POST" ? "media.upload" : "media.delete";
+  if (resource === "media") return method === "GET" ? "media.view" : method === "POST" ? "media.upload" : method === "PATCH" ? "media.update" : "media.delete";
+  if (resource === "settings") return method === "GET" ? "settings.view" : "settings.update";
+  if (resource === "shipping-zones" || resource === "shipping") return method === "GET" ? "shipping.view" : method === "POST" ? "shipping.create" : method === "DELETE" ? "shipping.delete" : "shipping.update";
   if (resource === "audit-logs") return "audit_logs.view";
   if (resource === "notifications") return "notifications.view";
   if (resource === "exports") return "reports.export";

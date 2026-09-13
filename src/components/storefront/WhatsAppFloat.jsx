@@ -1,20 +1,27 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/language";
+import { fetchSiteSettings } from "@/lib/store";
 
 export default function WhatsAppFloat() {
   const [visible, setVisible] = useState(false);
+  const [number, setNumber] = useState("212691573192");
+  const { t } = useLanguage();
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400);
     window.addEventListener("scroll", onScroll, { passive: true });
+    fetchSiteSettings().then((s) => {
+      if (s?.whatsapp_number) setNumber(s.whatsapp_number);
+    });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <a
-      href="https://wa.me/212691573192?text=Bonjour%20The%20Aviator%2C"
+      href={`https://wa.me/${number}?text=Bonjour%20The%20Aviator%2C`}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Commander via WhatsApp"
+      aria-label={t("Commander via WhatsApp")}
       className={`fixed bottom-5 right-5 z-30 flex h-13 w-13 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all duration-300 hover:scale-105 ${visible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"}`}
       style={{ height: "52px", width: "52px" }}
     >

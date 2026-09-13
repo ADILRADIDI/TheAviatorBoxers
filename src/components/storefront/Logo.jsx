@@ -18,11 +18,11 @@ export default function Logo({ variant = "dark", showText = true, className, emb
   const isLight = variant === "light";
   return (
     <span className={cn("inline-flex flex-col items-center leading-none", className)}>
-      <AviatorEmblem className={cn("h-6 w-7", isLight ? "text-white" : "text-navy", emblemClassName)} />
-      <span className={cn("mt-1 h-px w-9 bg-accent-lime")} />
-      <span className="mt-1 flex flex-col items-center">
-        <span className={cn("text-[8px] font-semibold uppercase tracking-[0.3em]", isLight ? "text-white/70" : "text-muted-foreground")}>The</span>
-        <span className={cn("font-display text-[15px] font-bold uppercase tracking-[0.2em]", isLight ? "text-white" : "text-navy")}>Aviator</span>
+      <AviatorEmblem className={cn("h-10 w-11", isLight ? "text-white" : "text-navy", emblemClassName)} />
+      <span className={cn("mt-1.5 h-px w-12 bg-accent-lime")} />
+      <span className="mt-1.5 flex flex-col items-center">
+        <span className={cn("text-[10px] font-semibold uppercase tracking-[0.3em]", isLight ? "text-white/70" : "text-muted-foreground")}>The</span>
+        <span className={cn("font-display text-[17px] font-bold uppercase tracking-[0.2em]", isLight ? "text-white" : "text-navy")}>Aviator</span>
       </span>
     </span>
   );

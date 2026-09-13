@@ -4,6 +4,7 @@ import Reveal from "@/components/storefront/Reveal";
 import { Image } from "@/components/ui/image";
 import { IMAGES } from "@/lib/assets";
 import { ShieldCheck, Award, Leaf, Gauge, Layers, Wind } from "lucide-react";
+import { useLanguage } from "@/lib/language";
 
 const CERTS = [
   { icon: ShieldCheck, name: "GRS", full: "Global Recycled Standard", desc: "Certification garantissant l'utilisation de matériaux recyclés et le respect de normes sociales et environnementales tout au long de la chaîne de production." },
@@ -18,10 +19,11 @@ const SPECS = [
 ];
 
 export default function Quality() {
+  const { t } = useLanguage();
   return (
     <>
       <AnnouncementBar />
-      <PageHeader eyebrow="Qualité" title="Qualité certifiée" subtitle="Des standards internationaux pour un confort premium et une qualité irréprochable." />
+      <PageHeader eyebrow={t("Qualité")} title={t("Qualité certifiée")} subtitle={t("Des standards internationaux pour un confort premium et une qualité irréprochable.")} />
 
       <section className="py-16 lg:py-24">
         <div className="container-edge">
@@ -34,7 +36,7 @@ export default function Quality() {
                   </div>
                   <p className="mt-5 font-display text-3xl font-bold">{cert.name}</p>
                   <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">{cert.full}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{cert.desc}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t(cert.desc)}</p>
                 </div>
               </Reveal>
             ))}
@@ -50,19 +52,17 @@ export default function Quality() {
             </div>
           </Reveal>
           <div>
-            <span className="label-eyebrow">Composition</span>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">L'ingénierie du tissu</h2>
+            <span className="label-eyebrow">{t("Composition")}</span>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">{t("L'ingénierie du tissu")}</h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Notre tissu est le fruit d'une sélection rigoureuse : un mélange de
-              95% coton premium et 5% Lycra, pensé pour offrir l'équilibre parfait
-              entre douceur, respirabilité et élasticité.
+              {t("Notre tissu est le fruit d'une sélection rigoureuse : un mélange de 95% coton premium et 5% Lycra, pensé pour offrir l'équilibre parfait entre douceur, respirabilité et élasticité.")}
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {SPECS.map((spec) => (
                 <div key={spec.title} className="border border-border bg-background p-5">
                   <spec.icon className="h-6 w-6 text-navy" strokeWidth={1.5} />
-                  <h3 className="mt-3 text-sm font-bold">{spec.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">{spec.text}</p>
+                  <h3 className="mt-3 text-sm font-bold">{t(spec.title)}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">{t(spec.text)}</p>
                 </div>
               ))}
             </div>
@@ -73,9 +73,9 @@ export default function Quality() {
       <section className="py-16 lg:py-24">
         <div className="container-edge">
           <Reveal className="text-center">
-            <span className="label-eyebrow">Engagement</span>
+            <span className="label-eyebrow">{t("Engagement")}</span>
             <h2 className="mx-auto mt-2 max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Notre promesse qualité
+              {t("Notre promesse qualité")}
             </h2>
           </Reveal>
           <div className="mx-auto mt-10 max-w-3xl space-y-4">
@@ -89,7 +89,7 @@ export default function Quality() {
               <Reveal key={i} delay={i * 0.05}>
                 <div className="flex items-start gap-3 border-b border-border pb-4">
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" />
-                  <p className="text-sm text-foreground sm:text-base">{item}</p>
+                  <p className="text-sm text-foreground sm:text-base">{t(item)}</p>
                 </div>
               </Reveal>
             ))}

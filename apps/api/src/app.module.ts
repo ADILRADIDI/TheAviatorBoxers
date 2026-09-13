@@ -1,11 +1,13 @@
-import { adminSessions, adminUserRoles, adminUsers, auditLogs, categories, cmsPages, coupons, createDatabase, inventoryMovements, mediaAssets, notifications, orders, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones } from "@aviator/db";
+
+
+import { adminSessions, adminUserRoles, adminUsers, auditLogs, categories, cmsPages, coupons, createDatabase, inventoryMovements, mediaAssets, notifications, orders, permissions, productVariants, products, promotions, returnRequests, reviews, rolePermissions, roles, shippingZones, siteSettings } from "@aviator/db";
 import { createWriteStream, mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import { join } from "node:path";
 import * as XLSX from "xlsx";
-import { Body, Controller, Delete, Get, Module, Param, Patch, Post, Query, Req, Res } from "@nestjs/common";
-import { eq, sql } from "drizzle-orm";
+import { Body, Controller, Delete, Get, Module, Param, Patch, Post, Put, Query, Req, Res } from "@nestjs/common";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { healthResponse } from "./health.js";
 import { createSessionToken, hashPassword, hashSessionToken, verifyPassword } from "./admin-auth.js";
 import { auditContext } from "./audit-context.js";
@@ -14,6 +16,30 @@ import { metricsText } from "./metrics.js";
 const { db } = createDatabase(process.env.DATABASE_URL);
 const mediaRoot = process.env.MEDIA_ROOT || join(process.cwd(), "storage", "media");
 mkdirSync(mediaRoot, { recursive: true });
+const DEFAULT_SITE_SETTINGS: Record<string, unknown> = {
+  store_name: "THE AVIATOR",
+  tagline: "Le confort, avec une autre dimension.",
+  description: "Boxers premium pour hommes, conçus pour offrir confort, maintien et style au quotidien.",
+  email: "contact@theaviatorboxer.com",
+  phone: "06 91 57 31 92",
+  whatsapp_number: "212691573192",
+  address: "Casablanca, Maroc",
+  instagram: "https://instagram.com/theaviatorboxer",
+  facebook: "https://facebook.com/theaviatorboxer",
+  tiktok: "",
+  youtube: "",
+  trust_items: [
+    { title: "Tissus premium", subtitle: "95% coton / 5% Lycra" },
+    { title: "Livraison 24-48h", subtitle: "Partout au Maroc" },
+    { title: "Paiement à la livraison", subtitle: "Payez à réception" },
+    { title: "Qualité contrôlée", subtitle: "Normes internationales" },
+  ],
+  footer_columns: [
+    { title: "Boutique", links: [{ label: "Collection", to: "/collection" }, { label: "Composer un pack", to: "/packs" }, { label: "Guide des tailles", to: "/guide-des-tailles" }, { label: "Avis clients", to: "/avis" }] },
+    { title: "Informations", links: [{ label: "À propos", to: "/a-propos" }, { label: "Qualité & certifications", to: "/qualite" }, { label: "Livraison & retours", to: "/livraison-retours" }, { label: "Paiement", to: "/paiement" }] },
+    { title: "Aide", links: [{ label: "FAQ", to: "/faq" }, { label: "Contact", to: "/contact" }, { label: "Conditions générales", to: "/cgv" }, { label: "Confidentialité", to: "/confidentialite" }] },
+  ],
+};
 const csvEscape = (value: unknown) => {
   const normalized = value !== null && typeof value === "object" ? JSON.stringify(value) : value;
   return `"${String(normalized ?? "").replaceAll('"', '""')}"`;
@@ -140,7 +166,6 @@ class AppController {
     const users = await db.select({ id: adminUsers.id, email: adminUsers.email, name: adminUsers.name, active: adminUsers.active }).from(adminUsers);
     return assignments.map((assignment) => users.find((user) => user.id === assignment.userId)).filter(Boolean);
   }
-  @Get("health")
     @Get("api/pages/:slug")
     async publicPage(@Param("slug") slug: string) { const [page] = await db.select().from(cmsPages).where(sql`${cmsPages.slug} = ${slug} AND ${cmsPages.status} = 'published'`); return page || null; }
 
@@ -181,6 +206,31 @@ class AppController {
 
     @Get("media/:filename")
     async mediaFile(@Param("filename") filename: string, @Res() response: any) { if (!/^[a-f0-9-]+\.(jpg|png|webp|gif)$/.test(filename)) return response.status(404).send({ message: "Not found" }); const asset = (await db.select().from(mediaAssets).where(eq(mediaAssets.filename, filename)))[0]; if (!asset) return response.status(404).send({ message: "Not found" }); return response.type(asset.mimeType).send((await import("node:fs")).createReadStream(join(mediaRoot, filename))); }
+
+    @Patch("api/admin/media/:id")
+    async mediaUpdate(@Param("id") id: string, @Body() body: { alt_text?: string }) { const [asset] = await db.update(mediaAssets).set({ altText: body.alt_text }).where(eq(mediaAssets.id, id)).returning(); await audit("media.updated", "media_asset", id, { altText: body.alt_text }); return asset; }
+
+    @Get("api/settings")
+    async publicSettings() {
+      const rows = await db.select().from(siteSettings).where(eq(siteSettings.key, "site"));
+      return { ...DEFAULT_SITE_SETTINGS, ...((rows[0]?.value as Record<string, unknown>) || {}) };
+    }
+
+    @Get("api/admin/settings")
+    async adminSettings() {
+      const rows = await db.select().from(siteSettings).where(eq(siteSettings.key, "site"));
+      return { ...DEFAULT_SITE_SETTINGS, ...((rows[0]?.value as Record<string, unknown>) || {}) };
+    }
+
+    @Put("api/admin/settings")
+    async updateSettings(@Body() body: Record<string, unknown>) {
+      const merged = { ...DEFAULT_SITE_SETTINGS, ...body };
+      const [row] = await db.insert(siteSettings).values({ key: "site", value: merged, updatedAt: new Date() }).onConflictDoUpdate({ target: siteSettings.key, set: { value: merged, updatedAt: new Date() } }).returning();
+      await audit("settings.updated", "site_settings", row.key, { fields: Object.keys(body) });
+      return { ...DEFAULT_SITE_SETTINGS, ...(row.value as Record<string, unknown>) };
+    }
+
+  @Get("health")
   health() {
     return healthResponse();
   }
@@ -194,20 +244,54 @@ class AppController {
   @Get("api/products")
   async productList() {
     const rows = await db.select().from(products).orderBy(products.createdAt);
-    return rows.map((row) => ({ ...row, price: row.price / 100, compare_at_price: null, status: "active", color_name: row.colorName, sizes: row.sizes || ["S", "M", "L", "XL", "XXL"], featured: row.featured, images: row.images || [], category: "boxer" }));
+    const reviewStats = await db
+      .select({ productId: reviews.productId, count: sql<number>`count(*)::int`, rating: sql<number>`round(avg(${reviews.rating})::numeric,1)` })
+      .from(reviews)
+      .where(eq(reviews.status, "approved"))
+      .groupBy(reviews.productId);
+    const statsMap = new Map(reviewStats.map((s) => [s.productId, s]));
+    return rows.map((row) => { const stat = statsMap.get(row.id); return { ...row, price: row.price / 100, compare_at_price: null, status: "active", color_name: row.colorName, sizes: row.sizes || ["S", "M", "L", "XL", "XXL"], featured: row.featured, images: row.images || [], category: "boxer", category_id: row.categoryId, description: row.description || "", review_count: stat?.count ?? 0, rating: stat?.rating != null ? Number(stat.rating) : null }; });
   }
 
   @Get("api/products/:slug")
   async product(@Param("slug") slug: string) {
     const rows = await db.select().from(products).where(eq(products.slug, slug));
     const row = rows[0];
-    return row ? { ...row, price: row.price / 100, status: "active", color_name: row.colorName, sizes: row.sizes || ["S", "M", "L", "XL", "XXL"], featured: row.featured, images: row.images || [], category: "boxer" } : null;
+    let reviewCount = 0;
+    let reviewRating: number | null = null;
+    if (row) {
+      const s = await db
+        .select({ count: sql<number>`count(*)::int`, rating: sql<number>`round(avg(${reviews.rating})::numeric,1)` })
+        .from(reviews)
+        .where(and(eq(reviews.productId, row.id), eq(reviews.status, "approved")));
+      const agg = s[0];
+      reviewCount = agg?.count ?? 0;
+      reviewRating = agg?.rating ?? null;
+    }
+    return row ? { ...row, price: row.price / 100, status: "active", color_name: row.colorName, sizes: row.sizes || ["S", "M", "L", "XL", "XXL"], featured: row.featured, images: row.images || [], category: "boxer", category_id: row.categoryId, description: row.description || "", review_count: reviewCount, rating: reviewRating != null ? Number(reviewRating) : null } : null;
   }
 
   @Get("api/shipping-zones")
   async shipping(@Query("city") city?: string) {
     const rows = city ? await db.select().from(shippingZones).where(eq(shippingZones.city, city)) : await db.select().from(shippingZones);
     return rows.map((row) => ({ ...row, fee: row.fee / 100, free_threshold: row.freeThreshold ? row.freeThreshold / 100 : 0, delivery_time: row.deliveryTime }));
+  }
+
+  @Get("robots.txt")
+  robots(@Res() response: any) {
+    const siteUrl = process.env.SITE_URL || "https://theaviatorboxer.com";
+    return response.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /checkout\nSitemap: ${siteUrl}/sitemap.xml\n`);
+  }
+
+  @Get("sitemap.xml")
+  async sitemap(@Res() response: any) {
+    const siteUrl = process.env.SITE_URL || "https://theaviatorboxer.com";
+    const rows = await db.select().from(products);
+    const staticPaths = ["/", "/collection", "/packs", "/a-propos", "/qualite", "/avis", "/contact", "/livraison-retours", "/guide-des-tailles", "/paiement", "/faq", "/cgv", "/confidentialite"];
+    const productPaths = rows.map((row) => `/produit/${row.slug}`);
+    const urls = [...staticPaths, ...productPaths];
+    const xml = ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">", ...urls.map((path) => `<url><loc>${siteUrl}${path}</loc><changefreq>weekly</changefreq></url>`), "</urlset>"].join("\n");
+    return response.type("application/xml").send(xml);
   }
 
   @Get("api/promotions/active")
@@ -347,16 +431,17 @@ class AppController {
     return row;
   }
 
+  @Delete("api/admin/returns/:id")
+  async deleteReturn(@Param("id") id: string) { await db.delete(returnRequests).where(eq(returnRequests.id, id)); await audit("return.deleted", "return_request", id); return { ok: true }; }
+
   @Get("api/admin/orders")
-  async adminOrders(@Query("page") pageQuery = "1", @Query("limit") limitQuery = "20") {
-    const page = Math.max(1, Number(pageQuery) || 1);
-    const limit = Math.min(100, Math.max(1, Number(limitQuery) || 20));
-    const rows = await db.select().from(orders).orderBy(orders.createdAt);
-    return { data: rows.slice((page - 1) * limit, page * limit), page, limit, total: rows.length, pages: Math.max(1, Math.ceil(rows.length / limit)) };
+  async adminOrders(@Query() query: any) {
+    const rows = await db.select().from(orders).orderBy(desc(orders.createdAt));
+    return listPage(rows, query);
   }
 
   @Get("api/admin/audit-logs")
-  async auditLogList(@Query() query: any) { return listPage(await db.select().from(auditLogs).orderBy(auditLogs.createdAt), query); }
+  async auditLogList(@Query() query: any) { return listPage(await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)), query); }
 
   @Get("api/admin/exports/orders.csv")
   async exportOrders() {
@@ -384,17 +469,32 @@ class AppController {
   async exportSalesXlsx(@Query() query: any, @Res() response: any) { const rows = (await db.select().from(orders)).filter((row) => (!query.status || row.status === query.status) && (!query.city || row.city === query.city) && (!query.from || row.createdAt >= new Date(query.from)) && (!query.to || row.createdAt <= new Date(query.to))).map((row) => ({ order_number: row.orderNumber, city: row.city, status: row.status, total_mad: row.total / 100, created_at: row.createdAt.toISOString() })); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Sales"); const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }); return response.header("content-disposition", "attachment; filename=aviator-sales.xlsx").type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").send(buffer); }
 
   @Get("api/admin/notifications")
-  async notificationList(@Query() query: any) { return listPage(await db.select().from(notifications).orderBy(notifications.createdAt), query); }
+  async notificationList(@Query() query: any) { return listPage(await db.select().from(notifications).orderBy(desc(notifications.createdAt)), query); }
+
+  @Get("api/admin/notifications/inbox")
+  async notificationInbox() {
+    const rows = await db.select().from(notifications).orderBy(desc(notifications.createdAt));
+    return { count: rows.filter((row) => !row.read).length, items: rows.slice(0, 8) };
+  }
+
+  @Patch("api/admin/notifications/read-all")
+  async markAllNotifications() { const rows = await db.update(notifications).set({ read: true }).returning(); return { ok: true, updated: rows.length }; }
 
   @Patch("api/admin/notifications/:id")
   async markNotification(@Param("id") id: string) { const [row] = await db.update(notifications).set({ read: true }).where(eq(notifications.id, id)).returning(); return row; }
+
+  @Post("api/admin/notifications")
+  async createNotification(@Body() body: { type?: string; title: string; message: string }) { const [row] = await db.insert(notifications).values({ type: body.type || "manual", title: body.title, message: body.message }).returning(); await audit("notification.created", "notification", row.id, { title: row.title }); return row; }
+
+  @Delete("api/admin/notifications/:id")
+  async deleteNotification(@Param("id") id: string) { await db.delete(notifications).where(eq(notifications.id, id)); return { ok: true }; }
 
   @Get("api/admin/products")
   async adminProducts(@Query("page") pageQuery = "1", @Query("limit") limitQuery = "20") {
     const page = Math.max(1, Number(pageQuery) || 1);
     const limit = Math.min(100, Math.max(1, Number(limitQuery) || 20));
-    const rows = await db.select().from(products).orderBy(products.createdAt);
-    return { data: rows.slice((page - 1) * limit, page * limit).map((row) => ({ ...row, price: row.price / 100, color_name: row.colorName, sizes: row.sizes || [], images: row.images || [] })), page, limit, total: rows.length, pages: Math.max(1, Math.ceil(rows.length / limit)) };
+    const rows = await db.select().from(products).orderBy(desc(products.createdAt));
+    return { data: rows.slice((page - 1) * limit, page * limit).map((row) => ({ ...row, price: row.price / 100, color_name: row.colorName, sizes: row.sizes || [], images: row.images || [], category_id: row.categoryId, description: row.description || "" })), page, limit, total: rows.length, pages: Math.max(1, Math.ceil(rows.length / limit)) };
   }
 
   @Get("api/admin/customers")
@@ -405,7 +505,7 @@ class AppController {
       const key = order.phone.replace(/[\s-]/g, "");
       const current = customers.get(key) || { phone: order.phone, name: `${order.firstName} ${order.lastName}`.trim(), city: order.city, orders: 0, totalSpent: 0, lastOrder: order.createdAt };
       current.orders += 1;
-      current.totalSpent += order.total;
+      current.totalSpent += Number(order.total) || 0;
       if (order.createdAt > current.lastOrder) current.lastOrder = order.createdAt;
       customers.set(key, current);
     }
@@ -464,20 +564,71 @@ class AppController {
     return row;
   }
 
+  @Post("api/admin/variants")
+  async createVariant(@Body() body: { product_id: string; sku: string; size: string; color: string; price: number; stock?: number; low_stock_threshold?: number }) {
+    if (!body.product_id || !body.sku || !body.size || !body.color) throw new Error("VARIANT_FIELDS_REQUIRED");
+    const [row] = await db.insert(productVariants).values({ productId: body.product_id, sku: body.sku.toUpperCase(), size: body.size, color: body.color, price: Math.round(Number(body.price || 0) * 100), stock: Number(body.stock || 0), lowStockThreshold: Number(body.low_stock_threshold || 5), active: true }).returning();
+    await audit("variant.created", "product_variant", row.id, { sku: row.sku });
+    return row;
+  }
+
+  @Delete("api/admin/variants/:id")
+  async deleteVariant(@Param("id") id: string) { await db.delete(productVariants).where(eq(productVariants.id, id)); await audit("variant.deleted", "product_variant", id); return { ok: true }; }
+
   @Get("api/admin/dashboard")
-  async dashboard() {
-    const [allOrders, allProducts, pendingReviews] = await Promise.all([
-      db.select().from(orders),
-      db.select().from(products),
-      db.select().from(reviews).where(eq(reviews.status, "pending")),
-    ]);
+  async dashboard(@Query("period") period = "all") {
+    let allOrders = await db.select().from(orders).orderBy(desc(orders.createdAt));
+    const allProducts = await db.select().from(products);
+    const pendingReviews = await db.select().from(reviews).where(eq(reviews.status, "pending"));
+
+    if (period === "today") {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      allOrders = allOrders.filter((o) => new Date(o.createdAt) >= startOfDay);
+    } else if (period === "7d") {
+      const past7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      allOrders = allOrders.filter((o) => new Date(o.createdAt) >= past7d);
+    } else if (period === "30d") {
+      const past30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      allOrders = allOrders.filter((o) => new Date(o.createdAt) >= past30d);
+    }
+
+    const nonCancelled = allOrders.filter((order) => order.status !== "annulee");
+    const revenue = nonCancelled.reduce((sum, order) => sum + (Number(order.total) || 0), 0) / 100;
+    const averageOrder = nonCancelled.length ? revenue / nonCancelled.length : 0;
+
+    const statusCounts = allOrders.reduce((acc: Record<string, number>, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const topProductsMap = new Map<string, { product_id: string; name: string; quantity: number; revenue: number }>();
+    for (const order of nonCancelled) {
+      if (!Array.isArray(order.items)) continue;
+      for (const item of order.items) {
+        const productId = String(item.product_id ?? item.productId ?? "?");
+        const quantity = Number(item.quantity || 1);
+        const price = Number(item.price || 0);
+        const current = topProductsMap.get(productId) || { product_id: productId, name: String(item.name || "Produit"), quantity: 0, revenue: 0 };
+        current.quantity += quantity;
+        current.revenue += quantity * price;
+        topProductsMap.set(productId, current);
+      }
+    }
+    const topProducts = [...topProductsMap.values()]
+      .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+      .slice(0, 5);
+
     return {
       orders: allOrders.length,
       customers: new Set(allOrders.map((order) => order.phone)).size,
-      revenue: allOrders.filter((order) => order.status !== "annulee").reduce((sum, order) => sum + order.total, 0) / 100,
-      averageOrder: allOrders.length ? allOrders.reduce((sum, order) => sum + order.total, 0) / 100 / allOrders.length : 0,
+      revenue,
+      averageOrder: Math.round(averageOrder * 100) / 100,
       lowStock: allProducts.filter((product) => product.stock < 5).length,
       pendingReviews: pendingReviews.length,
+      statusCounts,
+      topProducts,
+      period,
     };
   }
 
@@ -513,14 +664,37 @@ class AppController {
 
   @Post("api/admin/products")
   async createProduct(@Body() body: any) {
-    const [row] = await db.insert(products).values({ name: body.name, slug: body.slug, price: Math.round(Number(body.price) * 100), stock: Number(body.stock || 0), images: body.images || [], colorName: body.color_name, sizes: body.sizes || ["S", "M", "L", "XL", "XXL"], featured: Boolean(body.featured) }).returning();
+    const [row] = await db.insert(products).values({
+      name: body.name,
+      slug: body.slug,
+      price: Math.round(Number(body.price) * 100),
+      stock: Number(body.stock || 0),
+      images: body.images || [],
+      colorName: body.color_name,
+      sizes: body.sizes || ["S", "M", "L", "XL", "XXL"],
+      featured: Boolean(body.featured),
+      description: body.description || null,
+      categoryId: body.category_id || null,
+    }).returning();
     await audit("product.created", "product", row.id, { name: row.name });
     return row;
   }
 
   @Patch("api/admin/products/:id")
   async updateProduct(@Param("id") id: string, @Body() body: any) {
-    const [row] = await db.update(products).set({ name: body.name, price: Math.round(Number(body.price) * 100), stock: Number(body.stock || 0), images: body.images || [], colorName: body.color_name, sizes: body.sizes || ["S", "M", "L", "XL", "XXL"], featured: Boolean(body.featured) }).where(eq(products.id, id)).returning();
+    const updateData: any = {
+      name: body.name,
+      price: Math.round(Number(body.price) * 100),
+      stock: Number(body.stock || 0),
+      images: body.images || [],
+      colorName: body.color_name,
+      sizes: body.sizes || ["S", "M", "L", "XL", "XXL"],
+      featured: Boolean(body.featured),
+    };
+    if (body.description !== undefined) updateData.description = body.description || null;
+    if (body.category_id !== undefined) updateData.categoryId = body.category_id || null;
+
+    const [row] = await db.update(products).set(updateData).where(eq(products.id, id)).returning();
     await audit("product.updated", "product", id, { name: row?.name });
     return row;
   }
@@ -554,14 +728,38 @@ class AppController {
 
   @Post("api/admin/coupons")
   async createCoupon(@Body() body: any) {
-    const [row] = await db.insert(coupons).values({ code: body.code.toUpperCase(), discountType: body.discount_type, value: Number(body.value), maxDiscount: body.max_discount ? Math.round(Number(body.max_discount) * 100) : null, minCart: Number(body.min_cart || 0), usageLimit: body.usage_limit ? Number(body.usage_limit) : null, packOnly: Boolean(body.pack_only), productIds: Array.isArray(body.product_ids) ? body.product_ids : [], active: true }).returning();
+    const isFixed = body.discount_type === "fixed";
+    const [row] = await db.insert(coupons).values({
+      code: body.code.toUpperCase(),
+      discountType: body.discount_type,
+      value: isFixed ? Math.round(Number(body.value) * 100) : Number(body.value),
+      maxDiscount: body.max_discount ? Math.round(Number(body.max_discount) * 100) : null,
+      minCart: Math.round(Number(body.min_cart || 0) * 100),
+      usageLimit: body.usage_limit ? Number(body.usage_limit) : null,
+      packOnly: Boolean(body.pack_only),
+      productIds: Array.isArray(body.product_ids) ? body.product_ids : [],
+      expiresAt: body.expires_at ? new Date(body.expires_at) : null,
+      active: body.active !== false,
+    }).returning();
     return row;
   }
 
   @Patch("api/admin/coupons/:id")
   async updateCoupon(@Param("id") id: string, @Body() body: any) {
-    const [row] = await db.update(coupons).set({ active: Boolean(body.active) }).where(eq(coupons.id, id)).returning();
-    await audit("coupon.status.updated", "coupon", id, { active: body.active });
+    const isFixed = body.discount_type === "fixed";
+    const [row] = await db.update(coupons).set({
+      code: body.code?.toUpperCase(),
+      discountType: body.discount_type,
+      value: body.value !== undefined ? (isFixed ? Math.round(Number(body.value) * 100) : Number(body.value)) : undefined,
+      maxDiscount: body.max_discount ? Math.round(Number(body.max_discount) * 100) : null,
+      minCart: body.min_cart !== undefined ? Math.round(Number(body.min_cart) * 100) : undefined,
+      usageLimit: body.usage_limit !== undefined ? (body.usage_limit ? Number(body.usage_limit) : null) : undefined,
+      packOnly: body.pack_only !== undefined ? Boolean(body.pack_only) : undefined,
+      productIds: body.product_ids !== undefined ? body.product_ids : undefined,
+      expiresAt: body.expires_at !== undefined ? (body.expires_at ? new Date(body.expires_at) : null) : undefined,
+      active: body.active !== undefined ? Boolean(body.active) : undefined,
+    }).where(eq(coupons.id, id)).returning();
+    await audit("coupon.updated", "coupon", id, { code: row?.code });
     return row;
   }
 
@@ -588,13 +786,27 @@ class AppController {
 
   @Get("api/admin/reviews")
   async adminReviews(@Query() query: any) {
-    return listPage(await db.select().from(reviews).orderBy(reviews.createdAt), query);
+    const rows = await db
+      .select({ review: reviews, productName: products.name })
+      .from(reviews)
+      .leftJoin(products, eq(products.id, reviews.productId))
+      .orderBy(reviews.createdAt);
+    const mappedRows = rows.map((r) => ({ ...r.review, product_name: r.productName ?? "" }));
+    return listPage(query.product_id ? mappedRows.filter((r) => r.productId === query.product_id) : mappedRows, query);
   }
 
   @Patch("api/admin/reviews/:id")
   async moderateReview(@Param("id") id: string, @Body() body: { status: string }) {
     const [row] = await db.update(reviews).set({ status: body.status }).where(eq(reviews.id, id)).returning();
     await audit("review.moderated", "review", id, { status: body.status });
+    return row;
+  }
+
+  @Post("api/admin/reviews")
+  async createReviewAdmin(@Body() body: { name: string; city?: string; rating: number; comment: string; product_id?: string; status?: string }) {
+    const status = body.status || "approved";
+    const [row] = await db.insert(reviews).values({ name: body.name, city: body.city, rating: Math.max(1, Math.min(5, Number(body.rating) || 5)), comment: body.comment, productId: body.product_id, status, verified: status === "approved" }).returning();
+    await audit("review.created", "review", row.id, { rating: row.rating, status });
     return row;
   }
 

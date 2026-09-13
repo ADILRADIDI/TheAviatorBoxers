@@ -10,8 +10,10 @@ import ReviewsSection from "@/components/home/ReviewsSection";
 import FAQSection from "@/components/home/FAQSection";
 import Newsletter from "@/components/home/Newsletter";
 import WhatsAppCTA from "@/components/home/WhatsAppCTA";
+import { usePageMeta } from "@/lib/seo";
 
 export default function Home() {
+  usePageMeta({});
   return (
     <>
       <AnnouncementBar />

@@ -1,9 +1,11 @@
+// Global db definition removed; db is obtained from createDatabase
+
 import { config } from "dotenv";
 import { randomBytes, scrypt as nodeScrypt } from "node:crypto";
 import { promisify } from "node:util";
 import { sql } from "drizzle-orm";
 import { createDatabase } from "./index.js";
-import { adminUserRoles, adminUsers, categories, cmsPages, coupons, orders, permissions, productVariants, products, promotions, rolePermissions, roles, reviews, shippingZones } from "./schema.js";
+import { adminUserRoles, adminUsers, categories, cmsPages, coupons, orders, permissions, productVariants, products, promotions, rolePermissions, roles, reviews, shippingZones, siteSettings } from "./schema.js";
 
 const scrypt = promisify(nodeScrypt);
 async function hashPassword(password: string) { const salt = randomBytes(16).toString("hex"); const derived = await scrypt(password, salt, 64) as Buffer; return `scrypt$${salt}$${derived.toString("hex")}`; }
@@ -20,10 +22,11 @@ const permissionDefinitions = [
 ] as const;
 await db.insert(permissions).values(permissionDefinitions.map(([key, module, label]) => ({ key, module, label }))).onConflictDoNothing({ target: permissions.key });
 await db.insert(permissions).values({ key: "media.delete", module: "media", label: "Supprimer les médias" }).onConflictDoNothing({ target: permissions.key });
+await db.insert(permissions).values({ key: "media.update", module: "media", label: "Modifier les médias" }).onConflictDoNothing({ target: permissions.key });
 await db.insert(roles).values(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES", "WAREHOUSE", "MARKETING", "CONTENT_EDITOR"].map((name) => ({ name, description: `Rôle ${name}` }))).onConflictDoNothing({ target: roles.name });
 const [superRole] = await db.select().from(roles).where(sql`upper(${roles.name}) = 'SUPER_ADMIN'`);
 const permissionRows = await db.select().from(permissions);
-if (superRole && permissionRows.length) await db.insert(rolePermissions).values(permissionRows.map((permission) => ({ roleId: superRole.id, permissionId: permission.id }))).onConflictDoNothing();
+if (superRole && permissionRows.length) await db.insert(rolePermissions).values(permissionRows.map((permission: any) => ({ roleId: superRole.id, permissionId: permission.id }))).onConflictDoNothing();
 const adminEmail = (process.env.ADMIN_EMAIL || "admin@theaviator.local").toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD;
 if (!adminPassword) throw new Error("ADMIN_PASSWORD is required to seed the admin account");
@@ -33,16 +36,16 @@ if (existingAdmin && superRole) await db.insert(adminUserRoles).values({ userId:
 
 await db.insert(categories).values({ name: "Boxers", slug: "boxers", description: "Boxers premium pour hommes." }).onConflictDoNothing({ target: categories.slug });
 
-const productRows = [
+const productRows: any[] = [
   { name: "Aviator Essential Navy", slug: "aviator-essential-navy", price: 14900, stock: 40, colorName: "Navy", sizes: ["S", "M", "L", "XL", "XXL"], featured: true, images: ["https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=1200&q=85"] },
   { name: "Aviator Essential Noir", slug: "aviator-essential-noir", price: 14900, stock: 35, colorName: "Noir", sizes: ["S", "M", "L", "XL", "XXL"], featured: true, images: ["https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1200&q=85"] },
   { name: "Pack Signature 2 pièces", slug: "pack-signature-2", price: 26900, stock: 20, colorName: "Bleu", sizes: ["M", "L", "XL"], featured: true, images: ["https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=1200&q=85"] },
 ];
 
-for (const product of productRows) {
+for (const product of productRows as any[]) {
   const [saved] = await db.insert(products).values(product).onConflictDoUpdate({ target: products.slug, set: { images: product.images, stock: product.stock, price: product.price, colorName: product.colorName, sizes: product.sizes, featured: product.featured } }).returning();
   for (const size of product.sizes) {
-    await db.insert(productVariants).values({ productId: saved.id, sku: `${product.slug}-${size}`.toUpperCase(), size, color: product.colorName, price: product.price, stock: Math.max(1, Math.floor(product.stock / product.sizes.length)) }).onConflictDoNothing({ target: productVariants.sku });
+    await db.insert(productVariants).values({ productId: saved.id, sku: `${product.slug}-${size}`.toUpperCase(), size, color: product.colorName, price: product.price, stock: Math.max(25, Math.floor(product.stock / product.sizes.length)) }).onConflictDoNothing({ target: productVariants.sku });
   }
 }
 await db.insert(shippingZones).values([
@@ -54,7 +57,7 @@ await db.insert(shippingZones).values([
 ]).onConflictDoNothing({ target: shippingZones.city });
 await db.insert(coupons).values([
   { code: "TEST10", discountType: "percentage", value: 10, minCart: 0 },
-  { code: "PACK10", discountType: "percentage", value: 10, minCart: 0, packOnly: true },
+  { code: "PACK10", discountType: "percentage", value: 10, minCart: 24900 },
 ]).onConflictDoNothing({ target: coupons.code });
 await db.insert(promotions).values({
   name: "Bienvenue The Aviator",
@@ -77,6 +80,34 @@ if (navy) {
   await db.insert(reviews).values({ productId: navy.id, name: "Youssef E.", city: "Casablanca", rating: 5, comment: "Coupe confortable et tissu agréable. La livraison a été rapide.", status: "pending", verified: false }).onConflictDoNothing();
 }
 await db.insert(orders).values({ orderNumber: "AVT-SEED-001", idempotencyKey: "seed-order-001", firstName: "Youssef", lastName: "El Amrani", phone: "0612345678", city: "Casablanca", address: "12 rue du Commerce", items: [{ product_id: navy?.id, name: "Aviator Essential Navy", quantity: 1, price: 149 }], subtotal: 14900, shippingFee: 0, discount: 0, total: 14900, paymentMethod: "cod", status: "nouvelle" }).onConflictDoNothing({ target: orders.orderNumber });
+
+await db.insert(siteSettings).values({
+  key: "site",
+  value: {
+    store_name: "THE AVIATOR",
+    tagline: "Le confort, avec une autre dimension.",
+    description: "Boxers premium pour hommes, conçus pour offrir confort, maintien et style au quotidien.",
+    email: "contact@theaviatorboxer.com",
+    phone: "06 91 57 31 92",
+    whatsapp_number: "212691573192",
+    address: "Casablanca, Maroc",
+    instagram: "https://instagram.com/theaviatorboxer",
+    facebook: "https://facebook.com/theaviatorboxer",
+    tiktok: "",
+    youtube: "",
+    trust_items: [
+      { title: "Tissus premium", subtitle: "95% coton / 5% Lycra" },
+      { title: "Livraison 24-48h", subtitle: "Partout au Maroc" },
+      { title: "Paiement à la livraison", subtitle: "Payez à réception" },
+      { title: "Qualité contrôlée", subtitle: "Normes internationales" },
+    ],
+    footer_columns: [
+      { title: "Boutique", links: [{ label: "Collection", to: "/collection" }, { label: "Composer un pack", to: "/packs" }, { label: "Guide des tailles", to: "/guide-des-tailles" }, { label: "Avis clients", to: "/avis" }] },
+      { title: "Informations", links: [{ label: "À propos", to: "/a-propos" }, { label: "Qualité & certifications", to: "/qualite" }, { label: "Livraison & retours", to: "/livraison-retours" }, { label: "Paiement", to: "/paiement" }] },
+      { title: "Aide", links: [{ label: "FAQ", to: "/faq" }, { label: "Contact", to: "/contact" }, { label: "Conditions générales", to: "/cgv" }, { label: "Confidentialité", to: "/confidentialite" }] },
+    ],
+  },
+}).onConflictDoNothing({ target: siteSettings.key });
 
 await db.execute(sql`UPDATE products SET created_at = COALESCE(created_at, NOW())`);
 await pool.end();

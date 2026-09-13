@@ -134,6 +134,20 @@
       "when": 1789161164755,
       "tag": "0018_redundant_nicolaos",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789165000000,
+      "tag": "0019_add_product_description_and_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789166000000,
+      "tag": "0020_site_settings",
+      "breakpoints": true
     }
   ]
 }

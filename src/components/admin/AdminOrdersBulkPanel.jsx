@@ -1,14 +1,330 @@
 import { useState } from "react";
-import { CheckSquare, Eye, Square, Trash2 } from "lucide-react";
+import { CheckSquare, Download, Eye, Square, Trash2, Calendar, Phone, MapPin, Mail, FileText, Tag } from "lucide-react";
 import AdminModal from "./AdminModal";
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-async function request(path, options = {}) { const response = await fetch(`${API}${path}`, { headers: { "Content-Type": "application/json", "x-admin-token": localStorage.getItem("aviator_admin_token") || "" }, ...options }); if (!response.ok) throw new Error(`Erreur API ${response.status}`); return response.json(); }
-export default function AdminOrdersBulkPanel({ data, refresh }) {
-  const [selected, setSelected] = useState([]); const [detail, setDetail] = useState(null); const [busy, setBusy] = useState(false);
+import { formatNumber } from "@/lib/store";
+
+const API = import.meta.env.VITE_API_URL || "";
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API}${path}`, {
+    headers: {
+      ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+      "x-admin-token": localStorage.getItem("aviator_admin_token") || "",
+    },
+    ...options,
+  });
+  if (!response.ok) throw new Error(`Erreur API ${response.status}`);
+  return response.json();
+}
+
+const statusBadges = {
+  nouvelle: "bg-amber-50 text-amber-700 border-amber-200",
+  confirmee: "bg-blue-50 text-blue-700 border-blue-200",
+  preparation: "bg-purple-50 text-purple-700 border-purple-200",
+  expediee: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  livree: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  annulee: "bg-rose-50 text-rose-700 border-rose-200",
+};
+
+export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) {
+  const [selected, setSelected] = useState([]);
+  const [detail, setDetail] = useState(null);
+  const [busy, setBusy] = useState(false);
+
   const allSelected = data.length > 0 && selected.length === data.length;
   const toggleAll = () => setSelected(allSelected ? [] : data.map((order) => order.id));
-  const toggle = (id) => setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  const bulkStatus = async (status) => { setBusy(true); try { await Promise.all(selected.map((id) => request(`/api/admin/orders/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }))); setSelected([]); refresh(); } finally { setBusy(false); } };
-  const remove = async (order) => { if (!window.confirm(`Supprimer ${order.orderNumber} ?`)) return; await request(`/api/admin/orders/${order.id}`, { method: "DELETE" }); setSelected((current) => current.filter((id) => id !== order.id)); refresh(); };
-  return <section className="border border-border bg-background p-5 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Vente</p><h2 className="mt-1 font-display text-2xl font-bold">Commandes</h2></div>{selected.length > 0 && <div className="flex flex-wrap items-center gap-2"><span className="text-xs text-muted-foreground">{selected.length} sélectionnée{selected.length > 1 ? "s" : ""}</span><button disabled={busy} onClick={() => bulkStatus("confirmee")} className="bg-accent-lime px-3 py-2 text-xs font-bold">Confirmer</button><button disabled={busy} onClick={() => bulkStatus("preparation")} className="border border-border px-3 py-2 text-xs font-bold">Préparer</button><button disabled={busy} onClick={() => bulkStatus("expediee")} className="border border-border px-3 py-2 text-xs font-bold">Expédier</button></div>}</div><div className="mt-6 overflow-x-auto border-y border-border"><div className="flex min-w-[720px] items-center gap-4 border-b border-border bg-secondary px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"><button onClick={toggleAll} aria-label="Tout sélectionner" className="p-1">{allSelected ? <CheckSquare className="h-4 w-4 text-navy" /> : <Square className="h-4 w-4" />}</button><span className="flex-1">Commande / client</span><span>Total</span><span>Statut</span><span>Actions</span></div>{data.map((order) => <div key={order.id} className="flex min-w-[720px] items-center gap-4 border-b border-border px-3 py-4 last:border-0"><button onClick={() => toggle(order.id)} aria-label={`Sélectionner ${order.orderNumber}`} className="p-1">{selected.includes(order.id) ? <CheckSquare className="h-4 w-4 text-navy" /> : <Square className="h-4 w-4" />}</button><div className="flex-1"><strong className="font-mono text-sm">{order.orderNumber}</strong><p className="mt-1 text-xs text-muted-foreground">{order.firstName} {order.lastName} · {order.phone} · {order.city}</p></div><strong className="text-sm">{(order.total / 100).toLocaleString("fr-FR")} DH</strong><select value={order.status} onChange={async (event) => { await request(`/api/admin/orders/${order.id}`, { method: "PATCH", body: JSON.stringify({ status: event.target.value }) }); refresh(); }} className="border border-border bg-background px-2 py-2 text-xs"><option value="nouvelle">Nouvelle</option><option value="confirmee">Confirmée</option><option value="preparation">Préparation</option><option value="expediee">Expédiée</option><option value="livree">Livrée</option><option value="annulee">Annulée</option></select><div className="flex gap-1"><button onClick={() => setDetail(order)} className="border border-border p-2" aria-label={`Voir ${order.orderNumber}`}><Eye className="h-4 w-4" /></button><button onClick={() => remove(order)} className="border border-border p-2 text-destructive" aria-label={`Supprimer ${order.orderNumber}`}><Trash2 className="h-4 w-4" /></button></div></div>)}{!data.length && <p className="py-10 text-center text-sm text-muted-foreground">Aucune commande.</p>}</div><AdminModal open={Boolean(detail)} title={`Commande ${detail?.orderNumber || ""}`} onClose={() => setDetail(null)}>{detail && <div className="space-y-3 text-sm"><p><strong>Client :</strong> {detail.firstName} {detail.lastName}</p><p><strong>Téléphone :</strong> {detail.phone}</p><p><strong>Ville :</strong> {detail.city}</p><p><strong>Adresse :</strong> {detail.address}</p><p><strong>Total :</strong> {(detail.total / 100).toLocaleString("fr-FR")} DH</p><div><strong>Articles</strong><pre className="mt-2 max-h-48 overflow-auto bg-secondary p-3 text-xs">{JSON.stringify(detail.items, null, 2)}</pre></div></div>}</AdminModal></section>;
+  const toggle = (id) =>
+    setSelected((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    );
+
+  const bulkStatus = async (status) => {
+    setBusy(true);
+    try {
+      await Promise.all(
+        selected.map((id) =>
+          request(`/api/admin/orders/${id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ status }),
+          })
+        )
+      );
+      setSelected([]);
+      refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (order) => {
+    if (!window.confirm(`Supprimer définitivement la commande ${order.orderNumber} ?`)) return;
+    await request(`/api/admin/orders/${order.id}`, { method: "DELETE" });
+    setSelected((current) => current.filter((id) => id !== order.id));
+    refresh();
+  };
+
+  const formatDate = (isoString) => {
+    if (!isoString) return "-";
+    const d = new Date(isoString);
+    return d.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const result = await request("/api/admin/exports/orders.csv");
+      const blob = new Blob([result.content || ""], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = result.filename || "aviator-orders.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Erreur lors de l'export : " + err.message);
+    }
+  };
+
+  return (
+    <section className="admin-card p-5 sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="admin-section-title">Vente</p>
+          <h2 className="admin-h2 mt-1">Commandes</h2>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={handleExportCsv} className="admin-btn admin-btn-primary">
+            <Download className="h-3.5 w-3.5" />
+            Exporter CSV
+          </button>
+
+          {selected.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {selected.length} sélectionnée{selected.length > 1 ? "s" : ""}
+              </span>
+              <button disabled={busy} onClick={() => bulkStatus("confirmee")} className="admin-btn admin-btn-lime disabled:opacity-50">Confirmer</button>
+              <button disabled={busy} onClick={() => bulkStatus("preparation")} className="admin-btn admin-btn-ghost disabled:opacity-50">Préparer</button>
+              <button disabled={busy} onClick={() => bulkStatus("expediee")} className="admin-btn admin-btn-ghost disabled:opacity-50">Expédier</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="admin-list-scroll mt-6 overflow-x-auto rounded-xl border border-black/10">
+        <div className="admin-list-head flex min-w-[850px] items-center gap-4 border-b border-black/10 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <button onClick={toggleAll} aria-label="Tout sélectionner" className="p-1">
+            {allSelected ? <CheckSquare className="h-4 w-4 text-navy" /> : <Square className="h-4 w-4" />}
+          </button>
+          <span className="w-36">Date</span>
+          <span className="flex-1">Commande & Client</span>
+          <span className="w-24 text-right">Total</span>
+          <span className="w-36 text-center">Statut</span>
+          <span className="w-20 text-right">Actions</span>
+        </div>
+
+        {data.map((order) => (
+          <div key={order.id} className="flex min-w-[850px] items-center gap-4 border-b border-black/10 px-4 py-4 last:border-0 hover:bg-black/[0.02] transition-colors">
+            <button onClick={() => toggle(order.id)} aria-label={`Sélectionner ${order.orderNumber}`} className="p-1">
+              {selected.includes(order.id) ? <CheckSquare className="h-4 w-4 text-navy" /> : <Square className="h-4 w-4" />}
+            </button>
+
+            {/* Date */}
+            <div className="w-36 text-xs text-muted-foreground">
+              <span className="block font-medium text-foreground">
+                {new Date(order.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+              </span>
+              <span className="text-[11px]">
+                {new Date(order.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+
+            {/* Order & Customer */}
+            <div className="flex-1 min-w-0">
+              <strong className="font-mono text-sm text-navy">{order.orderNumber}</strong>
+              <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                {order.firstName} {order.lastName} · {order.phone} · <span className="font-medium text-navy">{order.city}</span>
+              </p>
+            </div>
+
+            {/* Total */}
+            <div className="w-24 text-right">
+              <strong className="text-sm text-navy">{formatNumber((order.total || 0) / 100)} DH</strong>
+            </div>
+
+            {/* Status */}
+            <div className="w-36 text-center">
+              <select
+                value={order.status}
+                onChange={async (event) => {
+                  await request(`/api/admin/orders/${order.id}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ status: event.target.value }),
+                  });
+                  refresh();
+                }}
+                className={`w-full rounded-md border px-2 py-1.5 text-xs font-semibold text-center focus:outline-none focus:ring-2 focus:ring-navy/30 ${statusBadges[order.status] || "border-black/15 bg-white"}`}
+              >
+                <option value="nouvelle">Nouvelle</option>
+                <option value="confirmee">Confirmée</option>
+                <option value="preparation">En préparation</option>
+                <option value="expediee">Expédiée</option>
+                <option value="livree">Livrée</option>
+                <option value="annulee">Annulée</option>
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div className="w-20 flex justify-end gap-1">
+              <button onClick={() => setDetail(order)} className="rounded-md border border-black/10 p-2 text-navy hover:bg-black/5" aria-label={`Voir ${order.orderNumber}`} title="Détails de la commande">
+                <Eye className="h-4 w-4" />
+              </button>
+              <button onClick={() => remove(order)} className="rounded-md border border-black/10 p-2 text-destructive hover:bg-destructive/10" aria-label={`Supprimer ${order.orderNumber}`} title="Supprimer la commande">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {!data.length && <p className="py-12 text-center text-sm text-muted-foreground">Aucune commande trouvée.</p>}
+      </div>
+
+      {/* Order Detail Modal */}
+      <AdminModal open={Boolean(detail)} title={`Commande ${detail?.orderNumber || ""}`} onClose={() => setDetail(null)}>
+        {detail && (
+          <div className="space-y-5 text-sm">
+            {/* Header info */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+              <div>
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {formatDate(detail.createdAt)}
+                </span>
+                <p className="mt-1 font-mono text-lg font-bold text-navy">{detail.orderNumber}</p>
+              </div>
+              <span
+                className={`rounded border px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                  statusBadges[detail.status] || "border-border bg-secondary"
+                }`}
+              >
+                {detail.status}
+              </span>
+            </div>
+
+            {/* Customer Details */}
+            <div className="grid gap-4 sm:grid-cols-2 rounded border border-border bg-secondary/30 p-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Client</p>
+                <p className="mt-1 font-semibold text-navy">{detail.firstName} {detail.lastName}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5 text-navy" />
+                  <a href={`tel:${detail.phone}`} className="hover:underline">{detail.phone}</a>
+                </p>
+                {detail.email && (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 text-navy" />
+                    <a href={`mailto:${detail.email}`} className="hover:underline">{detail.email}</a>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Livraison</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-navy font-semibold">
+                  <MapPin className="h-3.5 w-3.5 text-navy" />
+                  {detail.city}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{detail.address}</p>
+                {detail.neighborhood && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">Quartier : {detail.neighborhood}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Notes if any */}
+            {detail.notes && (
+              <div className="rounded border border-amber-200 bg-amber-50/50 p-3 text-xs text-amber-900 flex items-start gap-2">
+                <FileText className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
+                <div>
+                  <strong className="block font-semibold">Instructions du client :</strong>
+                  <p className="mt-0.5">{detail.notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Items Table */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground mb-2">Articles commandés</p>
+              <div className="border border-border overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-border bg-secondary text-[10px] font-bold uppercase text-muted-foreground">
+                    <tr>
+                      <th className="p-2.5">Produit</th>
+                      <th className="p-2.5">Variante</th>
+                      <th className="p-2.5 text-center">Qté</th>
+                      <th className="p-2.5 text-right">Prix unit.</th>
+                      <th className="p-2.5 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {Array.isArray(detail.items) && detail.items.map((item, idx) => {
+                      const qty = Number(item.quantity || 1);
+                      const unitPrice = Number(item.price || 0);
+                      const lineTotal = qty * unitPrice;
+                      return (
+                        <tr key={idx} className="hover:bg-secondary/20">
+                          <td className="p-2.5 font-semibold text-navy">{item.name || "Article"}</td>
+                          <td className="p-2.5 text-muted-foreground">
+                            {[item.color, item.size ? `Taille ${item.size}` : null].filter(Boolean).join(" · ") || "-"}
+                          </td>
+                          <td className="p-2.5 text-center font-bold">{qty}</td>
+                          <td className="p-2.5 text-right">{formatNumber(unitPrice)} DH</td>
+                          <td className="p-2.5 text-right font-bold text-navy">{formatNumber(lineTotal)} DH</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Financial Summary Breakdown */}
+            <div className="rounded border border-border bg-secondary/20 p-4 space-y-2 text-xs">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Sous-total</span>
+                <span className="font-semibold text-foreground">{formatNumber((detail.subtotal || 0) / 100)} DH</span>
+              </div>
+              {detail.discount > 0 && (
+                <div className="flex justify-between text-accent-lime font-semibold">
+                  <span className="flex items-center gap-1.5">
+                    <Tag className="h-3 w-3" />
+                    Réduction {detail.couponCode ? `(${detail.couponCode})` : ""}
+                  </span>
+                  <span>-{formatNumber((detail.discount || 0) / 100)} DH</span>
+                </div>
+              )}
+              <div className="flex justify-between text-muted-foreground">
+                <span>Frais de livraison ({detail.city})</span>
+                <span className="font-semibold text-foreground">
+                  {detail.shippingFee === 0 ? "Gratuit" : `${formatNumber((detail.shippingFee || 0) / 100)} DH`}
+                </span>
+              </div>
+              <div className="border-t border-border pt-2 flex justify-between text-sm font-bold text-navy">
+                <span>Total à encaisser (COD)</span>
+                <span className="font-display text-lg">{formatNumber((detail.total || 0) / 100)} DH</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </AdminModal>
+    </section>
+  );
 }

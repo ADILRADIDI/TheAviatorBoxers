@@ -1,3 +1,26 @@
+- in client side : Erreur d'affichage du panneau
+Cannot read properties of undefined (reading 'toLocaleString')
+Réessayer
+
+- each page should be a route not /admin in all pages . if i refresh page return in commands . 
+
+- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 - WEBSITE
     - Traduire entièrement toutes les pages en français naturel et darija naturelle.
     - Ajouter des routes SEO stables pour les langues, par exemple `/fr` et `/darija`.
@@ -15,7 +38,6 @@
     - Tester les retours, avis invités, changement de langue et affichage mobile.
     - Tester les performances : LCP, INP, CLS, images, polices, lazy loading et bundle frontend.
     - Corriger les liens cassés, pages orphelines, metadata manquantes et URLs privées indexables.
-
 
 - ADMIN DASHBOARD
     - Ajouter les réglages globaux du footer : téléphone, email, WhatsApp, réseaux sociaux et liens légaux.

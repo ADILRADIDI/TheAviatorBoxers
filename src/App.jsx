@@ -56,6 +56,7 @@ const AuthenticatedApp = () => {
     <CartProvider>
       <Routes>
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/:tab" element={<Admin />} />
         <Route element={<StoreLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/collection" element={<Collection />} />

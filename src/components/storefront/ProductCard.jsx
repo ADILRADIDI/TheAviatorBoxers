@@ -5,10 +5,12 @@ import { ShoppingBag } from "lucide-react";
 import { formatPrice, discountPercent } from "@/lib/store";
 import { useCart } from "@/lib/cart-context";
 import StarRating from "./StarRating";
+import { useLanguage } from "@/lib/language";
 
 export default function ProductCard({ product, index = 0 }) {
   const reduce = useReducedMotion();
   const { addItem, openDrawer } = useCart();
+  const { t } = useLanguage();
 
   const mainImage = product.images?.[0];
   const hoverImage = product.images?.[1] || product.images?.[0];
@@ -58,7 +60,7 @@ export default function ProductCard({ product, index = 0 }) {
               />
             </>
           ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">Aucune image</div>
+            <div className="flex h-full items-center justify-center text-muted-foreground">{t("Aucune image")}</div>
           )}
 
           {/* Badges */}
@@ -104,11 +106,11 @@ export default function ProductCard({ product, index = 0 }) {
         <button
           onClick={quickAdd}
           disabled={product.stock === 0}
-          aria-label={product.stock === 0 ? `${product.name} indisponible` : `Ajouter ${product.name} au panier`}
+          aria-label={product.stock === 0 ? `${product.name} ${t("indisponible")}` : `${t("Ajouter")} ${product.name} ${t("au panier")}`}
           className="btn-shine relative z-10 -mt-12 ml-3 mr-3 flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 bg-white/95 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-navy hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
         >
           <ShoppingBag className="h-3.5 w-3.5" />
-          {product.stock === 0 ? "Rupture de stock" : "Ajout rapide"}
+          {product.stock === 0 ? t("Rupture de stock") : t("Ajout rapide")}
         </button>
       </div>
     </motion.div>

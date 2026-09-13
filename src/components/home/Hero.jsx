@@ -1,13 +1,16 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { IMAGES } from "@/lib/assets";
+import { IMAGES, VIDEOS } from "@/lib/assets";
 import { STORE } from "@/lib/store";
 import HeroSlider from "./HeroSlider";
+import { useLanguage } from "@/lib/language";
 
 export default function Hero() {
   const reduce = useReducedMotion();
+  const [videoOff, setVideoOff] = useState(false);
   const ref = useRef(null);
+  const { t } = useLanguage();
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -27,6 +30,21 @@ export default function Hero() {
           images={IMAGES.heroSlider}
           alt="The Aviator — boxers premium pour hommes"
         />
+        {!reduce && !videoOff && (
+          <video
+            className="absolute inset-0 h-full w-full object-cover opacity-60"
+            src={VIDEOS.heroLoop}
+            poster={VIDEOS.heroPoster}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+            aria-hidden="true"
+            onError={() => setVideoOff(true)}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy via-transparent to-navy/50" />
       </motion.div>
@@ -44,7 +62,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="inline-block border-l-2 border-accent-lime pl-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70"
             >
-              Boxers Premium · Maroc
+              {t("Boxers Premium · Maroc")}
             </motion.span>
 
             <motion.h1
@@ -62,7 +80,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="mt-5 max-w-md font-display text-xl italic text-white/90 sm:text-2xl"
             >
-              Le confort, avec une autre dimension.
+              {t("Le confort, avec une autre dimension.")}
             </motion.p>
 
             <motion.p
@@ -84,13 +102,13 @@ export default function Hero() {
                 to="/collection"
                 className="btn-shine inline-flex items-center justify-center bg-accent-lime px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-navy transition-colors hover:bg-white"
               >
-                Découvrir la collection
+                {t("Découvrir la collection")}
               </Link>
               <Link
                 to="/packs"
                 className="inline-flex items-center justify-center border border-white/30 px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:border-white hover:bg-white/10"
               >
-                Composer mon pack
+                {t("Composer mon pack")}
               </Link>
             </motion.div>
           </div>
@@ -104,7 +122,7 @@ export default function Hero() {
         transition={{ delay: 1.2 }}
         className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 lg:flex"
       >
-        <span className="text-[10px] uppercase tracking-[0.3em] text-white/40">Découvrir</span>
+        <span className="text-[10px] uppercase tracking-[0.3em] text-white/40">{t("Découvrir")}</span>
         <span className="h-10 w-px bg-gradient-to-b from-white/40 to-transparent" />
       </motion.div>
     </section>

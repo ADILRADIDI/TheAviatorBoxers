@@ -52,7 +52,6 @@ Le frontend contient déjà le catalogue, les fiches produit, les packs, le pani
 
 > Exclu du périmètre actuel : le projet conserve uniquement le paiement à la livraison (COD).
 
-
 ## CLI-006 - Confirmation et suivi
 
 - Priorité : `P0`

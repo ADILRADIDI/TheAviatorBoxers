@@ -1,6 +1,7 @@
 import PageHeader from "@/components/storefront/PageHeader";
 import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { STORE } from "@/lib/store";
+import { useLanguage } from "@/lib/language";
 
 const CGV = [
   { title: "Article 1 — Objet", text: "Les présentes conditions générales de vente régissent les relations entre The Aviator et tout client effectuant un achat sur notre site ou via WhatsApp. Toute commande implique l'acceptation des présentes conditions." },
@@ -26,26 +27,27 @@ const PRIVACY = [
 export default function Legal({ type = "cgv" }) {
   const isCGV = type === "cgv";
   const sections = isCGV ? CGV : PRIVACY;
-  const title = isCGV ? "Conditions générales de vente" : "Politique de confidentialité";
-  const eyebrow = isCGV ? "Legal" : "Legal";
+  const { t } = useLanguage();
+  const title = isCGV ? t("Conditions générales de vente") : t("Politique de confidentialité");
+  const eyebrow = t("Legal");
 
   return (
     <>
       <AnnouncementBar />
-      <PageHeader eyebrow={eyebrow} title={title} subtitle={`Dernière mise à jour : ${new Date().toLocaleDateString("fr-FR")}`} />
+      <PageHeader eyebrow={eyebrow} title={title} subtitle={`${t("Dernière mise à jour :")} ${new Date().toLocaleDateString("fr-FR")}`} />
 
       <div className="container-edge py-12 lg:py-16">
         <div className="mx-auto max-w-3xl space-y-8">
           {sections.map((s, i) => (
             <section key={i}>
-              <h2 className="font-display text-lg font-bold">{s.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">{s.text}</p>
+              <h2 className="font-display text-lg font-bold">{t(s.title)}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">{t(s.text)}</p>
             </section>
           ))}
 
           <div className="border-t border-border pt-6">
             <p className="text-sm text-muted-foreground">
-              Pour toute question relative à ces {isCGV ? "conditions" : "politiques"}, contactez-nous à {STORE.email} ou via WhatsApp.
+              {t("Pour toute question relative à ces")} {isCGV ? t("conditions") : t("politiques")}, {t("contactez-nous à")} {STORE.email} {t("ou via WhatsApp")}.
             </p>
           </div>
         </div>
