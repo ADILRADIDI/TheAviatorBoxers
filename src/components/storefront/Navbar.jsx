@@ -58,7 +58,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="shrink-0" aria-label="The Aviator — Accueil">
-            <img src="/logo.svg" alt="The Aviator" className="h-20 aspect-square w-auto rounded-2xl bg-navy p-2 object-contain shadow-md ring-1 ring-white/15 lg:h-24" />
+            <img src="/logo-navy.png" alt="The Aviator" className="h-20 w-auto object-contain lg:h-24" />
           </Link>
 
           {/* Desktop nav */}
@@ -129,7 +129,7 @@ export default function Navbar() {
               className="fixed left-0 top-0 z-50 flex h-full w-[82%] max-w-sm flex-col bg-background lg:hidden"
             >
               <div className="flex h-28 items-center justify-between border-b px-5">
-                <img src="/logo.svg" alt="The Aviator" className="h-24 aspect-square w-auto rounded-2xl bg-navy p-2 object-contain shadow-md ring-1 ring-white/15" />
+                <img src="/logo-navy.png" alt="The Aviator" className="h-24 w-auto object-contain" />
                 <button onClick={() => setMobileOpen(false)} className="p-2 text-navy" aria-label={t("Fermer le menu")}>
                   <X className="h-5 w-5" />
                 </button>

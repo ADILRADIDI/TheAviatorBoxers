@@ -66,9 +66,9 @@ export default function Footer() {
       <div className="container-edge grid grid-cols-2 gap-8 py-12 md:grid-cols-2 lg:grid-cols-5">
         <div className="col-span-2 lg:col-span-2">
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="The Aviator"
-            className="h-32 aspect-square w-auto rounded-3xl bg-navy p-3 object-contain shadow-xl ring-1 ring-white/15 lg:h-40"
+            className="h-32 w-auto object-contain lg:h-40"
           />
           <p className="mt-5 max-w-xs text-sm text-white/60">
             {t(s.description)}

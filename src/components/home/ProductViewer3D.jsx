@@ -118,7 +118,7 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
     const hotspots = hotspotsRef.current;
 
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     } catch (err) {
       setFallback(true);
       return () => {};
@@ -152,35 +152,37 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
     (async () => {
       try {
         const head = await fetch("/products/product3d.glb", { method: "HEAD" });
-        if (!head.ok || disposed) return;
+        if (!head.ok) { mount.dataset.model = "no-glb"; return; }
+        mount.dataset.model = "loading";
         const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
         const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
-        if (disposed) return;
+        if (disposedRef.current) return;
         const pmrem = new THREE.PMREMGenerator(renderer);
         scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
         const gltf = await new GLTFLoader().loadAsync("/products/product3d.glb");
-        if (disposed) return;
+        if (disposedRef.current) return;
         const model = gltf.scene;
         model.traverse((c) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
         const fit = new THREE.Box3().setFromObject(model);
         const size = new THREE.Vector3();
         fit.getSize(size);
-        const scale = 1.95 / Math.max(size.y, 0.001);
+        const scale = 2.4 / Math.max(size.x, size.z, 0.001);
         model.scale.setScalar(scale);
         const fit2 = new THREE.Box3().setFromObject(model);
         const size2 = new THREE.Vector3();
         fit2.getSize(size2);
         const center = new THREE.Vector3();
         fit2.getCenter(center);
-        model.position.set(-center.x, -1.11 + size2.y / 2 - center.y, -center.z);
+        model.position.set(-center.x, -0.1 - center.y, -center.z);
         holder.remove(product);
         product.traverse((obj) => {
           if (obj.geometry) obj.geometry.dispose();
           if (obj.material) (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach((m) => m.dispose());
         });
         holder.add(model);
-      } catch {
-        /* keep procedural model */
+        mount.dataset.model = "user-model";
+      } catch (err) {
+        mount.dataset.model = "fallback:" + (err && err.message ? err.message : String(err)).slice(0, 80);
       }
     })();
 

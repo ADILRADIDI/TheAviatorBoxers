@@ -77,9 +77,17 @@ export default function ProductCard({ product, index = 0 }) {
             )}
           </div>
 
-        </div>
+          <button
+            onClick={quickAdd}
+            disabled={product.stock === 0}
+            aria-label={product.stock === 0 ? `${product.name} ${t("indisponible")}` : `${t("Ajouter")} ${product.name} ${t("au panier")}`}
+            className="btn-shine absolute inset-x-3 bottom-3 z-10 flex items-center justify-center gap-2 bg-white/95 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy opacity-0 backdrop-blur-sm shadow-md translate-y-2 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-navy hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <ShoppingBag className="h-3.5 w-3.5" />
+            {product.stock === 0 ? t("Rupture de stock") : t("Ajout rapide")}
+          </button>
 
-        {/* Info */}
+        </div>
         <div className="mt-3 space-y-1">
           <div className="flex items-center justify-between gap-2">
             <h3 className="truncate text-sm font-semibold text-foreground">{product.name}</h3>
@@ -103,15 +111,6 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
         </div>
         </Link>
-        <button
-          onClick={quickAdd}
-          disabled={product.stock === 0}
-          aria-label={product.stock === 0 ? `${product.name} ${t("indisponible")}` : `${t("Ajouter")} ${product.name} ${t("au panier")}`}
-          className="btn-shine relative z-10 -mt-12 ml-3 mr-3 flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 bg-white/95 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-navy hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          <ShoppingBag className="h-3.5 w-3.5" />
-          {product.stock === 0 ? t("Rupture de stock") : t("Ajout rapide")}
-        </button>
       </div>
     </motion.div>
   );
