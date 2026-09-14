@@ -204,31 +204,26 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
     const markers = hotspots.map((point, index) => {
       const m = { index, sprite: null, material: null, connector: null, group: new THREE.Group() };
 
-      const makeTex = (dot, num) => {
+      const makeTex = (dot) => {
         const canvas = document.createElement("canvas");
         canvas.width = 256;
         canvas.height = 256;
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, 256, 256);
         ctx.beginPath();
-        ctx.arc(128, 128, 100, 0, Math.PI * 2);
+        ctx.arc(128, 128, 64, 0, Math.PI * 2);
         ctx.fillStyle = dot;
         ctx.fill();
         ctx.lineWidth = 10;
-        ctx.strokeStyle = "rgba(255,255,255,0.92)";
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
         ctx.stroke();
-        ctx.fillStyle = num;
-        ctx.font = "900 118px 'Space Grotesk', sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(point.number ?? index + 1), 128, 132);
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         return tex;
       };
 
-      normalTxs.push(makeTex("rgba(11,42,85,0.95)", "#ffffff"));
-      activeTxs.push(makeTex("rgba(200,214,0,0.96)", "#ffffff"));
+      normalTxs.push(makeTex("rgba(11,42,85,0.95)"));
+      activeTxs.push(makeTex("rgba(200,214,0,0.96)"));
 
       const material = new THREE.SpriteMaterial({
         map: normalTxs[normalTxs.length - 1],
@@ -237,7 +232,7 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
         depthTest: true,
       });
       const sprite = new THREE.Sprite(material);
-      sprite.scale.setScalar(0.5);
+      sprite.scale.setScalar(0.2);
       sprite.renderOrder = 3;
       m.sprite = sprite;
       m.material = material;
@@ -308,7 +303,7 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
         }
         const pulse = active ? 1 + Math.sin(performance.now() * 0.008) * 0.08 : 1;
         m.connector.material.opacity = active ? 0.9 : 0.5;
-        m.sprite.scale.setScalar((active ? 0.56 : hoveredIdx === m.index ? 0.62 : 0.5) * pulse);
+        m.sprite.scale.setScalar((active ? 0.24 : hoveredIdx === m.index ? 0.23 : 0.2) * pulse);
       });
     };
 
@@ -409,7 +404,7 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
                   className={`product-hotspot ${active ? "product-hotspot-active" : ""}`}
                   style={{ left: `${point.x}%`, top: `${point.y}%` }}
                 >
-                  <span className="product-hotspot-dot">{point.number ?? index + 1}</span>
+                  <span className="product-hotspot-dot" aria-hidden="true" />
                 </button>
               );
             })}
@@ -440,18 +435,19 @@ export default function ProductViewer3D({ src, alt, className = "", hotspots = [
         .product-viewer-float { animation: productViewerFloatFallback 8s ease-in-out infinite; }
         .product-hotspot { position: absolute; transform: translate(-50%, -50%); padding: 0; border: none; background: none; cursor: pointer; }
         .product-hotspot-dot {
-          display: flex; align-items: center; justify-content: center;
-          width: 28px; height: 28px; border-radius: 9999px;
+          display: block;
+          width: 14px; height: 14px; border-radius: 9999px;
           background: hsl(var(--primary)); color: #fff;
-          font-size: 13px; font-weight: 800; font-family: var(--font-display);
-          box-shadow: 0 0 0 3px rgb(255 255 255 / 0.85), 0 8px 18px rgb(0 40 94 / 0.35);
-          border: 2px solid rgb(255 255 255 / 0.9);
+          border: 1.5px solid rgb(255 255 255 / 0.75);
+          box-shadow: 0 2px 6px rgb(0 40 94 / 0.35);
+          opacity: 0.9;
           transition: transform 0.25s ease, background 0.25s ease;
         }
-        .product-hotspot:hover .product-hotspot-dot { transform: scale(1.1); }
+        .product-hotspot:hover .product-hotspot-dot { transform: scale(1.15); }
         .product-hotspot-active .product-hotspot-dot {
-          background: hsl(64 100% 42%) !important; color: hsl(var(--primary));
-          box-shadow: 0 0 0 3px rgb(255 255 255 / 0.9), 0 0 0 7px rgb(199 212 0 / 0.35);
+          background: hsl(64 100% 42%) !important;
+          box-shadow: 0 0 0 4px rgb(199 212 0 / 0.3);
+          opacity: 1;
         }
       `}</style>
     </div>

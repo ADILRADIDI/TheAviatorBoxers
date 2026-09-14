@@ -76,7 +76,7 @@ pnpm exec playwright test      # suite e2e (17 specs attendus)
 ```
 
 ## Donnees de test
-- Admin : `admin@theaviator.local` / `change-me-admin` (endpoint `/api/admin/login`, token `x-admin-token`).
+- Admin : `admin@theaviator.local` / `Aviator-Admin2026!` (seed par défaut via `ADMIN_EMAIL` / `ADMIN_PASSWORD`, rôle `SUPER_ADMIN`, endpoint `/api/admin/login`, token `x-admin-token`).
 - Coupons : `TEST10` (10%), `PACK10` (packs 10%), `PACK_SIGNATURE`.
 - Casablanca : livraison gratuite.
 - Produits : Aviator Essential Navy/Noir 149 DH, Pack Signature 2 pieces 269 DH (variantes stock >= 25).

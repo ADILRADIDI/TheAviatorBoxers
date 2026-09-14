@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckSquare, Download, Eye, Square, Trash2, Calendar, Phone, MapPin, Mail, FileText, Tag } from "lucide-react";
+import { CheckSquare, Download, Eye, Square, Trash2, Calendar, Phone, MapPin, Mail, FileText, Tag, Undo2 } from "lucide-react";
 import AdminModal from "./AdminModal";
 import { formatNumber } from "@/lib/store";
 
@@ -24,6 +24,20 @@ const statusBadges = {
   expediee: "bg-indigo-50 text-indigo-700 border-indigo-200",
   livree: "bg-emerald-50 text-emerald-700 border-emerald-200",
   annulee: "bg-rose-50 text-rose-700 border-rose-200",
+};
+
+const returnStatusBadges = {
+  requested: "bg-amber-50 text-amber-700 border-amber-200",
+  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  rejected: "bg-rose-50 text-rose-700 border-rose-200",
+  completed: "bg-sky-50 text-sky-700 border-sky-200",
+};
+
+const returnStatusLabels = {
+  requested: "Retour demandé",
+  approved: "Retour accepté",
+  rejected: "Retour refusé",
+  completed: "Retour terminé",
 };
 
 export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) {
@@ -61,6 +75,36 @@ export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) 
     await request(`/api/admin/orders/${order.id}`, { method: "DELETE" });
     setSelected((current) => current.filter((id) => id !== order.id));
     refresh();
+  };
+
+  const updateReturn = async (returnRequest, status) => {
+    setBusy("return");
+    try {
+      await request(`/api/admin/returns/${returnRequest.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      setDetail((current) =>
+        current
+          ? { ...current, return_request: { ...current.return_request, status, stockRestored: current.return_request?.stockRestored || status === "approved" } }
+          : current
+      );
+      refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteReturn = async (returnRequest) => {
+    if (returnRequest && !window.confirm("Supprimer définitivement cette demande de retour ?")) return;
+    setBusy("return");
+    try {
+      await request(`/api/admin/returns/${returnRequest.id}`, { method: "DELETE" });
+      setDetail((current) => (current ? { ...current, return_request: null } : current));
+      refresh();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const formatDate = (isoString) => {
@@ -132,7 +176,7 @@ export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) 
         </div>
 
         {data.map((order) => (
-          <div key={order.id} className="flex min-w-[850px] items-center gap-4 border-b border-black/10 px-4 py-4 last:border-0 hover:bg-black/[0.02] transition-colors">
+          <div key={order.id} className={`flex min-w-[850px] items-center gap-4 border-b border-black/10 px-4 py-4 last:border-0 transition-colors ${order.return_request ? "bg-amber-50/50 hover:bg-amber-50/80" : "hover:bg-black/[0.02]"}`}>
             <button onClick={() => toggle(order.id)} aria-label={`Sélectionner ${order.orderNumber}`} className="p-1">
               {selected.includes(order.id) ? <CheckSquare className="h-4 w-4 text-navy" /> : <Square className="h-4 w-4" />}
             </button>
@@ -153,6 +197,12 @@ export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) 
               <p className="mt-0.5 text-xs text-muted-foreground truncate">
                 {order.firstName} {order.lastName} · {order.phone} · <span className="font-medium text-navy">{order.city}</span>
               </p>
+              {order.return_request && (
+                <span className={`mt-1.5 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${returnStatusBadges[order.return_request.status] || "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                  <Undo2 className="h-3 w-3" />
+                  {returnStatusLabels[order.return_request.status] || "Retour"}
+                </span>
+              )}
             </div>
 
             {/* Total */}
@@ -256,6 +306,53 @@ export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) 
                 <div>
                   <strong className="block font-semibold">Instructions du client :</strong>
                   <p className="mt-0.5">{detail.notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Return management */}
+            {detail.return_request && (
+              <div className="rounded border border-amber-200 bg-amber-50/60 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-800">
+                    <Undo2 className="h-4 w-4" />
+                    Demande de retour
+                  </p>
+                  <span className={`rounded border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${returnStatusBadges[detail.return_request.status] || "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                    {returnStatusLabels[detail.return_request.status] || detail.return_request.status}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                  <p><strong className="font-semibold text-navy">Motif :</strong> <span className="text-foreground/80">{detail.return_request.reason}</span></p>
+                  <p><strong className="font-semibold text-navy">Téléphone :</strong> <span className="text-foreground/80">{detail.return_request.phone}</span></p>
+                  <p><strong className="font-semibold text-navy">Demandé le :</strong> <span className="text-foreground/80">{formatDate(detail.return_request.createdAt)}</span></p>
+                  <p><strong className="font-semibold text-navy">Stock :</strong> <span className="text-foreground/80">{detail.return_request.stockRestored ? "restauré" : "non restauré"}</span></p>
+                  {detail.return_request.notes && (
+                    <p className="sm:col-span-2"><strong className="font-semibold text-navy">Notes :</strong> <span className="text-foreground/80">{detail.return_request.notes}</span></p>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-navy">Traiter le retour :</span>
+                  <select
+                    value={detail.return_request.status}
+                    disabled={busy === "return"}
+                    onChange={(event) => updateReturn(detail.return_request, event.target.value)}
+                    className="admin-input !w-auto !py-2"
+                    aria-label="Traiter la demande de retour"
+                  >
+                    <option value="requested">Demandé</option>
+                    <option value="approved">Accepté</option>
+                    <option value="rejected">Refusé</option>
+                    <option value="completed">Terminé</option>
+                  </select>
+                  <button
+                    disabled={busy === "return"}
+                    onClick={() => deleteReturn(detail.return_request)}
+                    className="admin-btn admin-btn-danger !py-2"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Supprimer la demande
+                  </button>
                 </div>
               </div>
             )}

@@ -6,7 +6,7 @@ test.describe("admin refresh probe", () => {
     test(`probe /admin/${route}`, async ({ page }) => {
       await page.goto(`/admin/${route}`);
       await page.getByLabel("Email").fill("admin@theaviator.local");
-      await page.getByLabel("Mot de passe").fill("change-me-admin");
+      await page.getByLabel("Mot de passe").fill("Aviator-Admin2026!");
       await page.getByRole("button", { name: /Ouvrir le back-office/i }).click();
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(1500);

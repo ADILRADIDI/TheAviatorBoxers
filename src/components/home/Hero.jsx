@@ -1,14 +1,13 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { IMAGES, VIDEOS } from "@/lib/assets";
+import { IMAGES } from "@/lib/assets";
 import { STORE } from "@/lib/store";
 import HeroSlider from "./HeroSlider";
 import { useLanguage } from "@/lib/language";
 
 export default function Hero() {
   const reduce = useReducedMotion();
-  const [videoOff, setVideoOff] = useState(false);
   const ref = useRef(null);
   const { t } = useLanguage();
 
@@ -30,21 +29,6 @@ export default function Hero() {
           images={IMAGES.heroSlider}
           alt="The Aviator — boxers premium pour hommes"
         />
-        {!reduce && !videoOff && (
-          <video
-            className="absolute inset-0 h-full w-full object-cover opacity-60"
-            src={VIDEOS.heroLoop}
-            poster={VIDEOS.heroPoster}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            disablePictureInPicture
-            aria-hidden="true"
-            onError={() => setVideoOff(true)}
-          />
-        )}
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy via-transparent to-navy/50" />
       </motion.div>

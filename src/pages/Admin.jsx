@@ -3,12 +3,11 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Bell, ChevronLeft, Layers, LayoutDashboard, Lock, Megaphone,
   Menu, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star, Tags, TicketPercent,
-  Trash2, Truck, Undo2, UserCog, Users, Warehouse, X,
+  Trash2, Truck, UserCog, Users, Warehouse, X,
 } from "lucide-react";
 import { AdminCategoriesPanel, AdminProductsPanel } from "@/components/admin/AdminCatalogPanels";
 import { AdminCouponsPanel, AdminPromotionsPanel } from "@/components/admin/AdminOperationsPanels";
 import AdminOrdersPanel from "@/components/admin/AdminOrdersBulkPanel";
-import AdminReturnsPanel from "@/components/admin/AdminReturnsPanel";
 import AdminCustomersPanel from "@/components/admin/AdminCustomersPanel";
 import AdminRolesPanel from "@/components/admin/AdminRolesPanel";
 import AdminUsersPanel from "@/components/admin/AdminUsersPanelComplete";
@@ -29,7 +28,7 @@ const request = async (path, options = {}) => {
 };
 
 const navGroups = [
-  { title: "Pilotage", items: [["dashboard", "Vue d'ensemble", LayoutDashboard], ["commandes", "Commandes", ShoppingBag], ["customers", "Clients", Users], ["returns", "Retours", Undo2], ["audit-logs", "Journal d'activité", ScrollText], ["notifications", "Notifications", Bell], ["roles", "Rôles & permissions", ShieldCheck], ["users", "Utilisateurs admin", UserCog]] },
+  { title: "Pilotage", items: [["dashboard", "Vue d'ensemble", LayoutDashboard], ["commandes", "Commandes", ShoppingBag], ["customers", "Clients", Users], ["audit-logs", "Journal d'activité", ScrollText], ["notifications", "Notifications", Bell], ["roles", "Rôles & permissions", ShieldCheck], ["users", "Utilisateurs admin", UserCog]] },
   { title: "Catalogue", items: [["produits", "Produits", Package], ["categories", "Catégories", Tags], ["variants", "Variantes & stock", Layers], ["inventory", "Inventaire", Warehouse]] },
   { title: "Vente", items: [["shipping-zones", "Livraison", Truck], ["coupons", "Coupons", TicketPercent], ["promotions", "Promotions", Megaphone]] },
   { title: "Contenu", items: [["avis", "Avis", Star]] },
@@ -37,9 +36,10 @@ const navGroups = [
 ];
 const tabs = navGroups.flatMap((group) => group.items);
 const apiTabs = { commandes: "orders", produits: "products", "shipping-zones": "shipping-zones", coupons: "coupons", promotions: "promotions", avis: "reviews", inventory: "inventory", notifications: "notifications", "audit-logs": "audit-logs", settings: "settings" };
-const navPermission = { dashboard: "dashboard.view", commandes: "orders.view", customers: "customers.view", returns: "returns.view", "audit-logs": "audit_logs.view", notifications: "notifications.view", roles: "roles.view", users: "users.view", produits: "products.view", categories: "categories.view", variants: "variants.view", inventory: "inventory.view", "shipping-zones": "shipping.view", coupons: "discounts.view", promotions: "promotions.view", avis: "reviews.view", settings: "settings.view" };
-const tabToRoute = { dashboard: "dashboard", commandes: "orders", customers: "clients", returns: "returns", "audit-logs": "activity", notifications: "notifications", roles: "roles", users: "users", produits: "products", categories: "categories", variants: "variants", inventory: "inventory", "shipping-zones": "shipping", coupons: "coupons", promotions: "promotions", avis: "reviews", settings: "settings" };
+const navPermission = { dashboard: "dashboard.view", commandes: "orders.view", customers: "customers.view", "audit-logs": "audit_logs.view", notifications: "notifications.view", roles: "roles.view", users: "users.view", produits: "products.view", categories: "categories.view", variants: "variants.view", inventory: "inventory.view", "shipping-zones": "shipping.view", coupons: "discounts.view", promotions: "promotions.view", avis: "reviews.view", settings: "settings.view" };
+const tabToRoute = { dashboard: "dashboard", commandes: "orders", customers: "clients", "audit-logs": "activity", notifications: "notifications", roles: "roles", users: "users", produits: "products", categories: "categories", variants: "variants", inventory: "inventory", "shipping-zones": "shipping", coupons: "coupons", promotions: "promotions", avis: "reviews", settings: "settings" };
 const routeToTab = Object.fromEntries(Object.entries(tabToRoute).map(([tab, route]) => [route, tab]));
+routeToTab.returns = "commandes";
 
 class AdminErrorBoundary extends Component {
   state = { hasError: false, error: null };
@@ -248,7 +248,6 @@ export default function Admin() {
                   {tab === "users" && <AdminUsersPanel data={Array.isArray(data) ? data : []} refresh={load} />}
                   {tab === "commandes" && <AdminOrdersPanel data={Array.isArray(data) ? data : []} refresh={load} />}
                   {tab === "customers" && <AdminCustomersPanel data={Array.isArray(data) ? data : []} />}
-                  {tab === "returns" && <AdminReturnsPanel data={Array.isArray(data) ? data : []} refresh={load} />}
                   {tab === "audit-logs" && <SimpleList title="Journal d'activité" data={Array.isArray(data) ? data : []} fields={["actor", "action", "entity"]} />}
                   {tab === "notifications" && <NotificationsPanel data={Array.isArray(data) ? data : []} refresh={load} onRead={(n) => setUnreadCount((c) => Math.max(0, c - (n.read ? 0 : 1)))} />}
                   {tab === "produits" && <AdminProductsPanel data={Array.isArray(data) ? data : []} refresh={load} />}

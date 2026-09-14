@@ -28,8 +28,7 @@ const [superRole] = await db.select().from(roles).where(sql`upper(${roles.name})
 const permissionRows = await db.select().from(permissions);
 if (superRole && permissionRows.length) await db.insert(rolePermissions).values(permissionRows.map((permission: any) => ({ roleId: superRole.id, permissionId: permission.id }))).onConflictDoNothing();
 const adminEmail = (process.env.ADMIN_EMAIL || "admin@theaviator.local").toLowerCase();
-const adminPassword = process.env.ADMIN_PASSWORD;
-if (!adminPassword) throw new Error("ADMIN_PASSWORD is required to seed the admin account");
+const adminPassword = process.env.ADMIN_PASSWORD || "Aviator-Admin2026!";
 const [admin] = await db.insert(adminUsers).values({ email: adminEmail, passwordHash: await hashPassword(adminPassword), name: "Administrateur The Aviator" }).onConflictDoNothing({ target: adminUsers.email }).returning();
 const existingAdmin = admin || (await db.select().from(adminUsers).where(sql`${adminUsers.email} = ${adminEmail}`))[0];
 if (existingAdmin && superRole) await db.insert(adminUserRoles).values({ userId: existingAdmin.id, roleId: superRole.id }).onConflictDoNothing();

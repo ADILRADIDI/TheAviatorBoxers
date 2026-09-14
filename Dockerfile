@@ -7,6 +7,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps ./apps
 COPY packages ./packages
 COPY src ./src
+COPY scripts ./scripts
+COPY public ./public
 COPY index.html vite.config.js jsconfig.json postcss.config.js tailwind.config.js eslint.config.js ./
 
 RUN pnpm install --frozen-lockfile

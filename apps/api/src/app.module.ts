@@ -437,7 +437,9 @@ class AppController {
   @Get("api/admin/orders")
   async adminOrders(@Query() query: any) {
     const rows = await db.select().from(orders).orderBy(desc(orders.createdAt));
-    return listPage(rows, query);
+    const returnByOrder = new Map((await db.select().from(returnRequests)).map((returnItem) => [returnItem.orderId, returnItem]));
+    const enriched = rows.map((row) => ({ ...row, return_request: returnByOrder.get(row.id) || null }));
+    return listPage(enriched, query);
   }
 
   @Get("api/admin/audit-logs")
