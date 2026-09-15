@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Image } from "@/components/ui/image";
 import { Minus, Plus, X, ShoppingBag, ArrowRight, Tag, Truck } from "lucide-react";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useCart, lineKey } from "@/lib/cart-context";
 import { formatPrice, STORE, validateCoupon, computeDiscount } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
@@ -45,14 +44,13 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <>
-        <AnnouncementBar />
         <div className="container-edge flex flex-col items-center justify-center py-24 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-            <ShoppingBag className="h-9 w-9 text-muted-foreground" strokeWidth={1} />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-foreground/20">
+            <ShoppingBag className="h-9 w-9 text-foreground/25" strokeWidth={1} />
           </div>
           <h1 className="mt-6 font-display text-3xl font-bold">{t("Votre panier est vide")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("Découvrez notre collection premium.")}</p>
-          <Link to="/collection" className="mt-6 bg-navy px-8 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-white">
+          <Link to="/collection" className="btn-store btn-store--navy btn-sheen mt-7">
             {t("Voir la collection")}
           </Link>
         </div>
@@ -62,7 +60,6 @@ export default function Cart() {
 
   return (
     <>
-      <AnnouncementBar />
       <div className="border-b border-border bg-secondary">
         <div className="container-edge py-8">
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{t("Mon panier")}</h1>
@@ -172,7 +169,7 @@ export default function Cart() {
 
               <button
                 onClick={() => navigate("/checkout")}
-                className="btn-shine mt-5 flex w-full items-center justify-center gap-2 bg-navy py-4 text-xs font-bold uppercase tracking-[0.18em] text-white"
+                className="btn-store btn-store--navy btn-sheen mt-5 w-full"
               >
                 {t("Commander")} <ArrowRight className="h-4 w-4" />
               </button>

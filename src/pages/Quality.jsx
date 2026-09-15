@@ -1,5 +1,4 @@
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import Reveal from "@/components/storefront/Reveal";
 import { Image } from "@/components/ui/image";
 import { IMAGES } from "@/lib/assets";
@@ -25,7 +24,6 @@ export default function Quality() {
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Qualité & certification", url: `${SITE_URL}/qualite` }]));
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Qualité")} title={t("Qualité certifiée")} subtitle={t("Des standards internationaux pour un confort premium et une qualité irréprochable.")} />
 
       <section className="py-16 lg:py-24">
@@ -33,11 +31,11 @@ export default function Quality() {
           <div className="grid gap-6 lg:grid-cols-2">
             {CERTS.map((cert, i) => (
               <Reveal key={cert.name} delay={i * 0.1}>
-                <div className="flex h-full flex-col items-center border border-border bg-background p-8 text-center lg:p-10">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-accent-lime">
-                    <cert.icon className="h-10 w-10 text-navy" strokeWidth={1.5} />
+                <div className="group flex h-full flex-col items-center border border-border bg-background p-8 text-center lg:p-10">
+                  <div className="flex h-20 w-20 items-center justify-center border-2 border-[hsl(72_74%_52%)] transition-colors duration-300 group-hover:bg-[hsl(72_74%_52%)]">
+                    <cert.icon className="h-10 w-10 text-ink" strokeWidth={1.5} />
                   </div>
-                  <p className="mt-5 font-display text-3xl font-bold">{cert.name}</p>
+                  <p className="mt-5 font-display text-3xl">{cert.name}</p>
                   <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">{cert.full}</p>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t(cert.desc)}</p>
                 </div>
@@ -63,7 +61,7 @@ export default function Quality() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {SPECS.map((spec) => (
                 <div key={spec.title} className="border border-border bg-background p-5">
-                  <spec.icon className="h-6 w-6 text-navy" strokeWidth={1.5} />
+                  <spec.icon className="h-6 w-6 text-ink" strokeWidth={1.5} />
                   <h3 className="mt-3 text-sm font-bold">{t(spec.title)}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">{t(spec.text)}</p>
                 </div>

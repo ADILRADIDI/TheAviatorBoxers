@@ -1,6 +1,5 @@
 import { Truck, Package, RefreshCw, Banknote, MapPin, Clock } from "lucide-react";
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { STORE } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
 import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
@@ -11,7 +10,6 @@ export default function ShippingReturns() {
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Livraison & retours", url: `${SITE_URL}/livraison-retours` }]));
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Informations")} title={t("Livraison & Retours")} subtitle={t("Tout ce qu'il faut savoir sur la livraison et les retours.")} />
 
       <div className="container-edge py-12 lg:py-16">
@@ -19,7 +17,7 @@ export default function ShippingReturns() {
           {/* Delivery */}
           <section>
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center bg-navy/5 text-navy"><Truck className="h-6 w-6" /></div>
+              <div className="flex h-12 w-12 items-center justify-center bg-foreground/[0.04] text-ink"><Truck className="h-6 w-6" /></div>
               <h2 className="font-display text-2xl font-bold">{t("Livraison")}</h2>
             </div>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
@@ -43,7 +41,7 @@ export default function ShippingReturns() {
                 { n: "3", t: "Livraison", d: "Le livreur vous contacte et vous remet le colis. Vous payez à la réception." },
               ].map((step) => (
                 <div key={step.n}>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy font-display text-lg font-bold text-white">{step.n}</div>
+                  <div className="flex h-10 w-10 items-center justify-center bg-navy font-display text-lg text-white">{step.n}</div>
                   <h4 className="mt-3 text-sm font-bold">{t(step.t)}</h4>
                   <p className="mt-1 text-xs text-muted-foreground">{t(step.d)}</p>
                 </div>
@@ -54,7 +52,7 @@ export default function ShippingReturns() {
           {/* Returns */}
           <section>
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center bg-navy/5 text-navy"><RefreshCw className="h-6 w-6" /></div>
+              <div className="flex h-12 w-12 items-center justify-center bg-foreground/[0.04] text-ink"><RefreshCw className="h-6 w-6" /></div>
               <h2 className="font-display text-2xl font-bold">{t("Retours & Échanges")}</h2>
             </div>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">

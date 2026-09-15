@@ -1,7 +1,7 @@
 import { Component, useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
-  Bell, ChevronLeft, Layers, LayoutDashboard, Lock, Megaphone,
+  Bell, ChevronLeft, Images, Layers, LayoutDashboard, Lock, Megaphone,
   Menu, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star, Tags, TicketPercent,
   Trash2, Truck, UserCog, Users, Warehouse, X,
 } from "lucide-react";
@@ -14,6 +14,7 @@ import AdminUsersPanel from "@/components/admin/AdminUsersPanelComplete";
 import AdminDashboardPanel from "@/components/admin/AdminDashboardPanel";
 import AdminInventoryPanel from "@/components/admin/AdminInventoryPanel";
 import AdminSettingsPanel from "@/components/admin/AdminSettingsPanel";
+import AdminStorefrontImagesPanel from "@/components/admin/AdminStorefrontImagesPanel";
 import { useAsync } from "@/lib/useAsync";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -31,13 +32,13 @@ const navGroups = [
   { title: "Pilotage", items: [["dashboard", "Vue d'ensemble", LayoutDashboard], ["commandes", "Commandes", ShoppingBag], ["customers", "Clients", Users], ["audit-logs", "Journal d'activité", ScrollText], ["notifications", "Notifications", Bell], ["roles", "Rôles & permissions", ShieldCheck], ["users", "Utilisateurs admin", UserCog]] },
   { title: "Catalogue", items: [["produits", "Produits", Package], ["categories", "Catégories", Tags], ["variants", "Variantes & stock", Layers], ["inventory", "Inventaire", Warehouse]] },
   { title: "Vente", items: [["shipping-zones", "Livraison", Truck], ["coupons", "Coupons", TicketPercent], ["promotions", "Promotions", Megaphone]] },
-  { title: "Contenu", items: [["avis", "Avis", Star]] },
+  { title: "Contenu", items: [["avis", "Avis", Star], ["images", "Images", Images]] }, 
   { title: "Configuration", items: [["settings", "Réglages", Settings]] },
 ];
 const tabs = navGroups.flatMap((group) => group.items);
-const apiTabs = { commandes: "orders", produits: "products", "shipping-zones": "shipping-zones", coupons: "coupons", promotions: "promotions", avis: "reviews", inventory: "inventory", notifications: "notifications", "audit-logs": "audit-logs", settings: "settings" };
-const navPermission = { dashboard: "dashboard.view", commandes: "orders.view", customers: "customers.view", "audit-logs": "audit_logs.view", notifications: "notifications.view", roles: "roles.view", users: "users.view", produits: "products.view", categories: "categories.view", variants: "variants.view", inventory: "inventory.view", "shipping-zones": "shipping.view", coupons: "discounts.view", promotions: "promotions.view", avis: "reviews.view", settings: "settings.view" };
-const tabToRoute = { dashboard: "dashboard", commandes: "orders", customers: "clients", "audit-logs": "activity", notifications: "notifications", roles: "roles", users: "users", produits: "products", categories: "categories", variants: "variants", inventory: "inventory", "shipping-zones": "shipping", coupons: "coupons", promotions: "promotions", avis: "reviews", settings: "settings" };
+const apiTabs = { commandes: "orders", produits: "products", "shipping-zones": "shipping-zones", coupons: "coupons", promotions: "promotions", avis: "reviews", inventory: "inventory", notifications: "notifications", "audit-logs": "audit-logs", images: "settings", settings: "settings" };
+const navPermission = { dashboard: "dashboard.view", commandes: "orders.view", customers: "customers.view", "audit-logs": "audit_logs.view", notifications: "notifications.view", roles: "roles.view", users: "users.view", produits: "products.view", categories: "categories.view", variants: "variants.view", inventory: "inventory.view", "shipping-zones": "shipping.view", coupons: "discounts.view", promotions: "promotions.view", avis: "reviews.view", images: "settings.view", settings: "settings.view" };
+const tabToRoute = { dashboard: "dashboard", commandes: "orders", customers: "clients", "audit-logs": "activity", notifications: "notifications", roles: "roles", users: "users", produits: "products", categories: "categories", variants: "variants", inventory: "inventory", "shipping-zones": "shipping", coupons: "coupons", promotions: "promotions", avis: "reviews", images: "images", settings: "settings" };
 const routeToTab = Object.fromEntries(Object.entries(tabToRoute).map(([tab, route]) => [route, tab]));
 routeToTab.returns = "commandes";
 
@@ -258,7 +259,7 @@ export default function Admin() {
                   {tab === "coupons" && <AdminCouponsPanel data={Array.isArray(data) ? data : []} refresh={load} />}
                   {tab === "promotions" && <AdminPromotionsPanel data={Array.isArray(data) ? data : []} refresh={load} />}
                   {tab === "avis" && <Reviews data={Array.isArray(data) ? data : []} refresh={load} />}
-                  {tab === "settings" && <AdminSettingsPanel />}
+                  {tab === "settings" && <AdminSettingsPanel />}{tab === "images" && <AdminStorefrontImagesPanel />}
                   {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
                 </>
               )}

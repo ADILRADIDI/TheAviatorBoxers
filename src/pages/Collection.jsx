@@ -3,11 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "@/components/storefront/ProductCard";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useAsync } from "@/lib/useAsync";
 import { fetchProducts } from "@/lib/store";
 import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 import { useLanguage } from "@/lib/language";
+import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
   { value: "featured", label: "En vedette" },
@@ -76,30 +76,39 @@ export default function Collection() {
   }, [products, search, colors, sizes, maxPrice, sortBy]);
 
   const FilterContent = () => (
-    <div className="space-y-8">
+    <div className="space-y-9">
       <div>
-        <h3 className="label-eyebrow mb-3">{t("Couleur")}</h3>
+        <h3 className="label-eyebrow mb-4">{t("Couleur")}</h3>
         <div className="flex flex-wrap gap-2">
           {COLOR_FILTERS.map((c) => (
             <button
               key={c.name}
               onClick={() => toggle(c.name, colors, setColors)}
-              className={`flex items-center gap-2 border px-3 py-1.5 text-xs transition-colors ${colors.includes(c.name) ? "border-navy bg-navy text-white" : "border-border hover:border-navy"}`}
+              className={cn(
+                "chip",
+                colors.includes(c.name) && "is-on",
+              )}
             >
-              <span className="h-3 w-3 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
+              <span
+                className="h-3.5 w-3.5 rounded-full border border-black/10"
+                style={{ backgroundColor: c.hex }}
+              />
               {c.name}
             </button>
           ))}
         </div>
       </div>
       <div>
-        <h3 className="label-eyebrow mb-3">{t("Taille")}</h3>
+        <h3 className="label-eyebrow mb-4">{t("Taille")}</h3>
         <div className="flex flex-wrap gap-2">
           {SIZE_FILTERS.map((s) => (
             <button
               key={s}
               onClick={() => toggle(s, sizes, setSizes)}
-              className={`h-9 w-9 border text-xs font-medium transition-colors ${sizes.includes(s) ? "border-navy bg-navy text-white" : "border-border hover:border-navy"}`}
+              className={cn(
+                "chip min-w-11 justify-center px-0",
+                sizes.includes(s) && "is-on",
+              )}
             >
               {s}
             </button>
@@ -107,16 +116,16 @@ export default function Collection() {
         </div>
       </div>
       <div>
-        <h3 className="label-eyebrow mb-3">{t("Prix")}</h3>
+        <h3 className="label-eyebrow mb-4">{t("Prix")}</h3>
         {maxAvailable > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <input
               type="range"
               min={0}
               max={maxAvailable}
               value={maxPrice === Infinity ? maxAvailable : maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value) >= maxAvailable ? Infinity : Number(e.target.value))}
-              className="w-full accent-navy"
+              className="w-full accent-[hsl(72_74%_52%)]"
               aria-label={t("Prix maximum")}
             />
             <p className="text-xs text-muted-foreground">
@@ -128,7 +137,7 @@ export default function Collection() {
       {(colors.length > 0 || sizes.length > 0 || maxPrice !== Infinity) && (
         <button
           onClick={() => { setColors([]); setSizes([]); setMaxPrice(Infinity); }}
-          className="text-xs font-medium uppercase tracking-wider text-muted-foreground underline underline-offset-4 hover:text-navy"
+          className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground underline underline-offset-4 hover:text-navy"
         >
           {t("Réinitialiser les filtres")}
         </button>
@@ -138,25 +147,29 @@ export default function Collection() {
 
   return (
     <>
-      <AnnouncementBar />
-      <div className="border-b border-border bg-secondary">
-        <div className="container-edge py-12 text-center lg:py-16">
-          <span className="label-eyebrow">{t("La collection")}</span>
-          <h1 className="mt-2 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+      {/* Editorial header */}
+      <section className="relative overflow-hidden bg-navy py-16 text-white lg:py-24">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 grain-dark opacity-50" />
+        <div className="container-edge relative">
+          <span className="label-eyebrow flex items-center gap-2.5 text-white/45">
+            <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+            {t("La collection")}
+          </span>
+          <h1 className="mt-4 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
             {t("Tous nos produits")}
           </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+          <p className="mt-4 max-w-md text-sm text-white/60 sm:text-base">
             {t("Boxers premium conçus pour le confort, le maintien et le style au quotidien.")}
           </p>
         </div>
-      </div>
+      </section>
 
-      <div className="container-edge py-10">
+      <div className="container-edge py-10 lg:py-14">
         {/* Toolbar */}
-        <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="mb-10 flex items-center justify-between gap-4">
           <button
             onClick={() => setMobileFilters(true)}
-            className="flex items-center gap-2 border border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wider lg:hidden"
+            className="flex items-center gap-2 border border-foreground/20 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-ink transition-colors hover:border-navy lg:hidden"
           >
             <SlidersHorizontal className="h-4 w-4" /> {t("Filtres")}
           </button>
@@ -167,25 +180,33 @@ export default function Collection() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("Rechercher...")}
-              className="w-full border border-border bg-background py-2.5 pl-10 pr-4 text-sm focus:border-navy focus:outline-none"
+              className="w-full border-b border-foreground/20 bg-transparent py-2.5 pl-10 pr-4 text-sm focus:border-navy focus:outline-none"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label className="hidden text-xs font-medium uppercase tracking-wider text-muted-foreground sm:block">{t("Trier:")}</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-border bg-background px-3 py-2.5 text-xs font-medium focus:border-navy focus:outline-none"
-            >
-              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}
-            </select>
+          <div className="flex items-center gap-3">
+            <label className="hidden text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground sm:block">{t("Trier:")}</label>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="cursor-pointer appearance-none border border-foreground/20 bg-transparent py-2.5 pl-4 pr-9 text-xs font-medium uppercase tracking-[0.1em] focus:border-navy focus:outline-none"
+              >
+                {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.label)}</option>)}
+              </select>
+              <svg className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-10">
+        <div className="flex gap-12">
           {/* Desktop sidebar */}
           <aside className="hidden w-56 shrink-0 lg:block">
-            <h2 className="mb-6 font-display text-lg font-bold">{t("Filtres")}</h2>
+            <h2 className="mb-7 flex items-center gap-2.5 font-display text-xl">
+              {t("Filtres")}
+              <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+            </h2>
             <FilterContent />
           </aside>
 
@@ -195,9 +216,9 @@ export default function Collection() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i}>
-                    <div className="aspect-[3/4] animate-pulse bg-muted" />
-                    <div className="mt-3 h-4 w-3/4 animate-pulse bg-muted" />
-                    <div className="mt-2 h-4 w-1/2 animate-pulse bg-muted" />
+                    <div className="aspect-[3/4] animate-pulse bg-foreground/5" />
+                    <div className="mt-3 h-4 w-3/4 animate-pulse bg-foreground/5" />
+                    <div className="mt-2 h-4 w-1/2 animate-pulse bg-foreground/5" />
                   </div>
                 ))}
               </div>
@@ -207,15 +228,20 @@ export default function Collection() {
               </div>
             ) : filtered.length > 0 ? (
               <>
-                <p className="mb-6 text-xs text-muted-foreground">{filtered.length} {filtered.length > 1 ? t("produits") : t("produit")}</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 lg:grid-cols-3">
+                <p className="mb-8 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+                  {filtered.length} {filtered.length > 1 ? t("produits") : t("produit")}
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-3">
                   {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Search className="h-10 w-10 text-muted-foreground" strokeWidth={1} />
-                <p className="mt-4 font-display text-xl">{t("Aucun produit trouvé")}</p>
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <span className="flex h-16 w-16 items-center justify-center border border-dashed border-foreground/20">
+                  <Search className="h-6 w-6 text-foreground/30" strokeWidth={1} />
+                </span>
+                <p className="mt-5 font-display text-xl">{t("Aucun produit trouvé")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{t("Essayez de modifier vos filtres.")}</p>
               </div>
             )}
@@ -227,23 +253,29 @@ export default function Collection() {
       <AnimatePresence>
         {mobileFilters && (
           <>
-            <div className="fixed inset-0 z-50 bg-navy/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileFilters(false)} />
+            <div className="fixed inset-0 z-50 bg-navy/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileFilters(false)} />
             <motion.div
               initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed right-0 top-0 z-50 h-full w-[85%] max-w-sm overflow-y-auto bg-background p-6 lg:hidden"
+              transition={{ type: "tween", duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed right-0 top-0 z-50 flex h-full w-[85%] max-w-sm flex-col bg-background lg:hidden"
             >
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="font-display text-lg font-bold">{t("Filtres")}</h2>
-                <button onClick={() => setMobileFilters(false)} className="p-1"><X className="h-5 w-5" /></button>
+              <div className="flex items-center justify-between bg-navy px-6 py-5 text-white">
+                <h2 className="font-display text-xl">{t("Filtres")}</h2>
+                <button onClick={() => setMobileFilters(false)} className="p-1 text-white/70" aria-label={t("Fermer")}>
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <FilterContent />
-              <button
-                onClick={() => setMobileFilters(false)}
-                className="mt-8 w-full bg-navy py-3.5 text-xs font-semibold uppercase tracking-[0.15em] text-white"
-              >
-                {t("Voir")} {filtered.length} {filtered.length > 1 ? t("produits") : t("produit")}
-              </button>
+              <div className="store-scroll flex-1 overflow-y-auto px-6 py-7">
+                <FilterContent />
+              </div>
+              <div className="border-t px-6 py-5">
+                <button
+                  onClick={() => setMobileFilters(false)}
+                  className="btn-store btn-store--navy btn-sheen w-full"
+                >
+                  {t("Voir")} {filtered.length} {filtered.length > 1 ? t("produits") : t("produit")}
+                </button>
+              </div>
             </motion.div>
           </>
         )}

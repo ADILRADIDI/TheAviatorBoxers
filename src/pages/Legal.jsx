@@ -1,5 +1,4 @@
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { STORE } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
 import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
@@ -42,14 +41,16 @@ export default function Legal({ type = "cgv" }) {
 
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={eyebrow} title={title} subtitle={`${t("Dernière mise à jour :")} ${new Date().toLocaleDateString("fr-FR")}`} />
 
       <div className="container-edge py-12 lg:py-16">
         <div className="mx-auto max-w-3xl space-y-8">
           {sections.map((s, i) => (
-            <section key={i}>
-              <h2 className="font-display text-lg font-bold">{t(s.title)}</h2>
+            <section key={i} className="group">
+              <h2 className="flex items-center gap-2.5 font-display text-lg">
+                <span className="h-2 w-2 shrink-0 bg-[hsl(72_74%_52%)] transition-colors group-hover:bg-[hsl(72_74%_52%)]" />
+                {t(s.title)}
+              </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">{t(s.text)}</p>
             </section>
           ))}

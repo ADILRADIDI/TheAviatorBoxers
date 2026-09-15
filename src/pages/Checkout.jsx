@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Image } from "@/components/ui/image";
 import { Banknote, ShieldCheck, MessageCircle, Loader2 } from "lucide-react";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { useCart, lineKey } from "@/lib/cart-context";
 import { formatPrice, STORE, computeDiscount, MOROCCAN_CITIES, DEFAULT_SHIPPING, fetchShippingZone, createOrder } from "@/lib/store";
 
@@ -149,11 +148,14 @@ export default function Checkout() {
   if (items.length === 0) {
     return (
       <>
-        <AnnouncementBar />
-        <div className="container-edge py-20 text-center">
-          <h1 className="font-display text-3xl">{t("Panier vide")}</h1>
+        <div className="container-edge py-24 text-center">
+          <span className="label-eyebrow flex items-center justify-center gap-2.5 text-ink/40">
+            <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+            {t("Aucune sélection")}
+          </span>
+          <h1 className="mt-4 font-display text-4xl">{t("Panier vide")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("Ajoutez des produits avant de passer commande.")}</p>
-          <Link to="/collection" className="mt-6 inline-block bg-navy px-6 py-3 text-xs font-bold uppercase tracking-wider text-white">{t("Voir la collection")}</Link>
+          <Link to="/collection" className="btn-store btn-store--navy btn-sheen mx-auto mt-8">{t("Voir la collection")}</Link>
         </div>
       </>
     );
@@ -161,13 +163,16 @@ export default function Checkout() {
 
   return (
     <>
-      <AnnouncementBar />
-      <div className="border-b border-border bg-secondary">
-        <div className="container-edge py-8">
-          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{t("Commande")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("Complétez vos informations pour finaliser la commande.")}</p>
+      <section className="bg-navy py-12 text-white lg:py-16">
+        <div className="container-edge">
+          <span className="label-eyebrow flex items-center gap-2.5 text-white/45">
+            <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+            {t("Finaliser")}
+          </span>
+          <h1 className="mt-3 font-display text-4xl leading-[0.95] tracking-tight sm:text-5xl">{t("Commande")}</h1>
+          <p className="mt-3 text-sm text-white/60">{t("Complétez vos informations pour finaliser la commande.")}</p>
         </div>
-      </div>
+      </section>
 
       <form onSubmit={handleSubmit} className="container-edge py-10">
         <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
@@ -179,7 +184,10 @@ export default function Checkout() {
 
             {/* Informations essentielles */}
             <fieldset className="space-y-4">
-              <legend className="font-display text-lg font-bold">{t("Informations de livraison")}</legend>
+              <legend className="flex items-center gap-2.5 font-display text-xl">
+                  <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+                  {t("Informations de livraison")}
+                </legend>
               <Field label={t("Nom complet")} error={errors.name} required>
                 <input value={form.name} onChange={set("name")} className={inputCls(!!errors.name)} placeholder="Ahmed Benani" data-error={!!errors.name} autoComplete="name" />
               </Field>
@@ -193,7 +201,10 @@ export default function Checkout() {
 
             {/* Livraison */}
             <fieldset className="space-y-4">
-              <legend className="font-display text-lg font-bold">{t("Adresse de livraison")}</legend>
+              <legend className="flex items-center gap-2.5 font-display text-xl">
+                  <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+                  {t("Adresse de livraison")}
+                </legend>
               <Field label={t("Ville")} error={errors.city} required>
                 <select value={form.city} onChange={set("city")} className={inputCls(!!errors.city)} data-error={!!errors.city}>
                   <option value="">{t("Sélectionnez votre ville")}</option>
@@ -208,54 +219,56 @@ export default function Checkout() {
               </Field>
             </fieldset>
 
-            {/* Paiement */}
-            <fieldset className="space-y-4">
-              <legend className="font-display text-lg font-bold">{t("Mode de paiement")}</legend>
-              <label className="flex cursor-pointer items-center gap-3 border-2 border-navy bg-navy/5 p-4">
-                <input type="radio" name="payment" defaultChecked className="accent-navy" />
-                <Banknote className="h-5 w-5 text-navy" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">{t("Paiement à la livraison (COD)")}</p>
-                  <p className="text-xs text-muted-foreground">{t("Payez en espèces à la réception")}</p>
-                </div>
-              </label>
-            </fieldset>
+            <Field label={t("Mode de paiement")} required>
+                <span className="flex cursor-pointer items-center gap-4 border border-navy bg-foreground/[0.03] p-4">
+                  <input type="radio" name="payment" defaultChecked className="accent-[hsl(72_74%_52%)]" />
+                  <Banknote className="h-5 w-5 text-ink" strokeWidth={1.5} />
+                  <span className="flex-1">
+                    <p className="text-sm font-bold text-ink">{t("Paiement à la livraison (COD)")}</p>
+                    <p className="text-xs text-muted-foreground">{t("Payez en espèces à la réception")}</p>
+                  </span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-[hsl(72_74%_52%)]" />
+                </span>
+              </Field>
           </div>
 
           {/* Summary */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <div className="border border-border bg-background p-6">
-              <h2 className="font-display text-lg font-bold">{t("Ma commande")}</h2>
-              <ul className="mt-4 max-h-64 space-y-3 overflow-y-auto">
+              <h2 className="font-display text-xl">{t("Ma commande")}</h2>
+              <ul className="store-scroll mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
                 {items.map((item) => {
                   const key = lineKey(item);
                   return (
                     <li key={key} className="flex gap-3">
                       <div className="relative h-16 w-14 shrink-0 overflow-hidden bg-muted">
                         {item.image && <Image src={item.image} alt="" fittingType="fill" className="h-full w-full object-cover" />}
-                        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-navy px-1 text-[10px] font-bold text-white">{item.quantity}</span>
+                        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center bg-[hsl(72_74%_52%)] px-1 text-[10px] font-bold tabular text-navy">{item.quantity}</span>
                       </div>
                       <div className="flex flex-1 flex-col justify-center">
                         <p className="text-xs font-semibold">{item.name}</p>
                         <p className="text-xs text-muted-foreground">{[item.color, item.size].filter(Boolean).join(" · ")}</p>
                       </div>
-                      <span className="self-center text-xs font-medium">{formatPrice(item.price * item.quantity)}</span>
+                      <span className="self-center text-xs font-bold tabular">{formatPrice(item.price * item.quantity)}</span>
                     </li>
                   );
                 })}
               </ul>
 
-              <div className="mt-5 space-y-2 border-t border-border pt-4">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("Sous-total")}</span><span>{formatPrice(subtotal)}</span></div>
-                {discount > 0 && <div className="flex justify-between text-sm text-accent-lime"><span>{t("Réduction")}</span><span>-{formatPrice(discount)}</span></div>}
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("Livraison")}</span><span>{shippingLoading ? t("Calcul...") : shippingFee === 0 ? t("Gratuite") : formatPrice(shippingFee)}</span></div>
-                <div className="flex justify-between border-t border-border pt-3 text-lg font-bold"><span>{t("Total")}</span><span>{formatPrice(total)}</span></div>
+              <div className="mt-5 space-y-2.5 border-t border-border pt-4">
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("Sous-total")}</span><span className="tabular">{formatPrice(subtotal)}</span></div>
+                {discount > 0 && <div className="flex justify-between text-sm text-[hsl(72_74%_52%)]"><span>{t("Réduction")}</span><span className="tabular">-{formatPrice(discount)}</span></div>}
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("Livraison")}</span><span className="tabular">{shippingLoading ? t("Calcul...") : shippingFee === 0 ? t("Gratuite") : formatPrice(shippingFee)}</span></div>
+                <div className="flex items-baseline justify-between border-t border-border pt-3">
+                  <span className="text-sm font-bold uppercase tracking-[0.12em]">{t("Total")}</span>
+                  <span className="font-display text-2xl tabular text-navy">{formatPrice(total)}</span>
+                </div>
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="btn-shine mt-5 flex w-full items-center justify-center gap-2 bg-navy py-4 text-xs font-bold uppercase tracking-[0.18em] text-white disabled:opacity-50"
+                className="btn-store btn-store--navy btn-sheen mt-6 w-full disabled:cursor-not-allowed"
               >
                 {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("Traitement...")}</> : t("Confirmer ma commande")}
               </button>
@@ -286,7 +299,7 @@ export default function Checkout() {
 }
 
 function inputCls(hasError) {
-  return cn("w-full border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-1", hasError ? "border-destructive focus:ring-destructive" : "border-border focus:border-navy focus:ring-navy");
+  return cn("w-full border-b bg-transparent px-0 pb-2.5 pt-1 text-[15px] focus:outline-none", hasError ? "border-destructive" : "border-foreground/25 focus:border-navy");
 }
 
 function Field({ label, error, required, children }) {

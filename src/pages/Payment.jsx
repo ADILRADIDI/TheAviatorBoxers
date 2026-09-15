@@ -1,6 +1,5 @@
 import { Banknote, ShieldCheck, Lock, Check } from "lucide-react";
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import Reveal from "@/components/storefront/Reveal";
 import { useLanguage } from "@/lib/language";
 import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
@@ -11,7 +10,6 @@ export default function Payment() {
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Paiement à la livraison", url: `${SITE_URL}/paiement` }]));
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Informations")} title={t("Paiement")} subtitle={t("Des options de paiement simples et fiables.")} />
 
       <div className="container-edge py-12 lg:py-16">
@@ -20,7 +18,7 @@ export default function Payment() {
           <Reveal>
             <div className="border border-border bg-background p-6 lg:p-8">
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center bg-accent-lime/20 text-navy">
+                <div className="flex h-14 w-14 items-center justify-center bg-[hsl(72_74%_52%)]/15 text-ink">
                   <Banknote className="h-7 w-7" />
                 </div>
                 <div>
@@ -50,14 +48,14 @@ export default function Payment() {
           <Reveal delay={0.1}>
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="flex items-start gap-4 border border-border p-6">
-                <ShieldCheck className="h-6 w-6 shrink-0 text-navy" />
+                <ShieldCheck className="h-6 w-6 shrink-0 text-ink" />
                 <div>
                   <h3 className="text-sm font-bold">{t("Données protégées")}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">{t("Vos informations personnelles sont traitées de manière confidentielle et sécurisée.")}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 border border-border p-6">
-                <Lock className="h-6 w-6 shrink-0 text-navy" />
+                <Lock className="h-6 w-6 shrink-0 text-ink" />
                 <div>
                   <h3 className="text-sm font-bold">{t("Transaction simple")}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">{t("Aucune donnée bancaire n'est demandée pour le paiement à la livraison.")}</p>

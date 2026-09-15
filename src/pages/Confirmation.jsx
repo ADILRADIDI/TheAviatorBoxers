@@ -1,10 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { CheckCircle, MessageCircle, Home } from "lucide-react";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
+import { CheckCircle, MessageCircle, ArrowRight } from "lucide-react";
 import { formatPrice } from "@/lib/store";
 import { whatsappOrderUrl } from "@/lib/whatsapp";
 import { usePageMeta } from "@/lib/seo";
 import { useLanguage } from "@/lib/language";
+import Reveal from "@/components/storefront/Reveal";
 
 export default function Confirmation() {
   const location = useLocation();
@@ -19,41 +19,71 @@ export default function Confirmation() {
     : "Bonjour The Aviator,";
 
   return (
-    <>
-      <AnnouncementBar />
-      <div className="container-edge py-16 lg:py-24">
+    <div className="relative overflow-hidden bg-navy py-16 text-white lg:py-24">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 grain-dark opacity-50" />
+      <div className="container-edge relative">
         <div className="mx-auto max-w-2xl text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-accent-lime/20">
-            <CheckCircle className="h-10 w-10 text-accent-lime" strokeWidth={1.5} />
-          </div>
-          <h1 className="mt-6 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            {t("Merci pour votre commande !")}
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            {t("Votre commande a bien été enregistrée. Nous vous contacterons rapidement pour confirmer la livraison.")}
-          </p>
+          <Reveal>
+            <span className="mx-auto flex h-20 w-20 items-center justify-center border border-white/15 bg-[hsl(72_74%_52%)]">
+              <CheckCircle className="h-10 w-10 text-navy" strokeWidth={1.25} />
+            </span>
+            <span className="label-eyebrow mt-8 flex items-center justify-center gap-2.5 text-white/45">
+              <span className="h-1 w-1 rounded-full bg-[hsl(72_74%_52%)]" />
+              {t("Commande confirmée")}
+            </span>
+            <h1 className="mt-4 font-display text-4xl leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
+              {t("Merci pour votre commande !")}
+            </h1>
+            <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-white/60 sm:text-base">
+              {t("Votre commande a bien été enregistrée. Nous vous contacterons rapidement pour confirmer la livraison.")}
+            </p>
+          </Reveal>
+
           {order && (
-            <div className="mt-8 border border-border bg-background p-6 text-left">
-              <p className="font-medium">{t("Référence commande :")} {reference}</p>
-              <p className="mt-1">{t("Total à payer en espèces à la livraison :")} {formatPrice(order.total)}</p>
-              <p>Ville : {order.city}</p>
-              <div className="mt-4 flex space-x-4">
-                <Link to="/" className="inline-flex items-center text-blue-600 hover:underline">
-                  <Home className="mr-1" /> {t("Retour à l'accueil")}
+            <Reveal delay={0.15}>
+              <div className="mt-10 border border-white/15 bg-white/[0.04] p-7 text-left backdrop-blur-sm">
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between border-b border-white/10 pb-3">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">{t("Référence commande")}</span>
+                    <span className="font-display text-lg tabular">{reference}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/10 pb-3">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">{t("Total à payer à la livraison")}</span>
+                    <span className="font-display text-2xl tabular text-[hsl(72_74%_52%)]">{formatPrice(order.total)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">{t("Ville")}</span>
+                    <span className="text-sm text-white/80">{order.city}</span>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          )}
+
+          {order && (
+            <Reveal delay={0.25}>
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link to="/" className="btn-store btn-store--lime btn-sheen">
+                  {t("Retour à l'accueil")}
                 </Link>
                 <a
                   href={whatsappOrderUrl(waMessage)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center text-green-600 hover:underline"
+                  className="btn-store btn-store--ghost"
                 >
-                  <MessageCircle className="mr-1" /> WhatsApp
+                  <MessageCircle className="h-4 w-4" />
+                  {t("Confirmer via WhatsApp")}
+                  <ArrowRight className="btn-arrow-ic h-4 w-4" />
                 </a>
               </div>
-            </div>
+              <p className="mt-8 text-xs text-white/40">
+                {t("Livraison 24-48h · Paiement en espèces à réception")}
+              </p>
+            </Reveal>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

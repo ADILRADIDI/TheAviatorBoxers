@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { MessageCircle, Mail, Clock, MapPin, Send, Check, ArrowUpRight, Headset, Truck, PackageCheck } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { STORE } from "@/lib/store";
 import { whatsappContactUrl } from "@/lib/whatsapp";
 import { useLanguage } from "@/lib/language";
@@ -53,8 +52,6 @@ export default function Contact() {
 
   return (
     <>
-      <AnnouncementBar />
-
       {/* Luxury hero */}
       <section className="relative overflow-hidden bg-navy text-white">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/[0.04] blur-2xl" />
@@ -73,7 +70,7 @@ export default function Contact() {
               {t("Notre équipe vous répond en moins de 2 heures, du lundi au vendredi. Une question, une demande, un conseil : on est là.")}
             </motion.p>
             <motion.div variants={fadeUp} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <a href={`https://wa.me/${STORE.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="btn-shine flex items-center gap-2 bg-accent-lime px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-navy">
+              <a href={`https://wa.me/${STORE.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="btn-store btn-store--lime btn-sheen">
                 <MessageCircle className="h-4 w-4" /> {t("Commander via WhatsApp")}
               </a>
               <a href={`mailto:${STORE.email}`} className="flex items-center gap-2 border border-white/25 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:border-white/60 hover:bg-white/5">
@@ -200,7 +197,7 @@ export default function Contact() {
                     {t("Envoyé")} — {t("on vous répond très vite !")}
                   </motion.div>
                 ) : (
-                  <motion.button key="send" type="submit" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="btn-shine flex w-full items-center justify-center gap-2 bg-navy py-4 text-xs font-bold uppercase tracking-[0.18em] text-white">
+                  <motion.button key="send" type="submit" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="btn-store btn-store--navy btn-sheen w-full">
                     <Send className="h-4 w-4" /> {t("Envoyer")}
                   </motion.button>
                 )}
@@ -217,7 +214,7 @@ export default function Contact() {
             <h2 className="font-display text-2xl font-bold lg:text-3xl">{t("Besoin d'une réponse tout de suite ?")}</h2>
             <p className="mt-2 max-w-xl text-sm text-white/60">{t("Discutez avec notre équipe sur WhatsApp : commande, taille ou livraison, on vous dit tout.")}</p>
           </div>
-          <a href={`https://wa.me/${STORE.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="btn-shine flex shrink-0 items-center gap-2 bg-accent-lime px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-navy">
+          <a href={`https://wa.me/${STORE.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="btn-store btn-store--lime btn-sheen shrink-0">
             <MessageCircle className="h-4 w-4" /> {t("Commander via WhatsApp")}
           </a>
         </div>

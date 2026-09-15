@@ -3,11 +3,7 @@ const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
@@ -73,6 +69,13 @@ export default function Register() {
     db.auth.loginWithProvider("google", safeReturnTo());
   };
 
+  const setOtpDigit = (index, value) => {
+    const clean = value.replace(/\D/g, "").slice(-1);
+    const next = otpCode.split("");
+    next[index] = clean;
+    setOtpCode(next.join("").slice(0, 6));
+  };
+
   if (showOtp) {
     return (
       <AuthLayout
@@ -81,45 +84,36 @@ export default function Register() {
         subtitle={`We sent a code to ${email}`}
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div role="alert" className="mb-5 border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
-        <div className="flex justify-center mb-6">
-          <InputOTP
-            maxLength={6}
-            value={otpCode}
-            onChange={setOtpCode}
-            autoFocus
-            autoComplete="one-time-code"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+        <div className="flex justify-center gap-2" role="group" aria-label="Verification code">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <input
+              key={index}
+              value={otpCode[index] || ""}
+              onChange={(e) => setOtpDigit(index, e.target.value)}
+              onClick={(e) => e.target.select()}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              className="h-14 w-11 border-b-2 border-border bg-transparent text-center font-display text-xl text-ink focus:border-b-[hsl(72_74%_52%)] focus:outline-none"
+            />
+          ))}
         </div>
-        <Button
-          className="w-full h-12 font-medium"
-          onClick={handleVerify}
-          disabled={loading || otpCode.length < 6}
-        >
+        <button type="button" className="btn-store btn-store--navy btn-sheen mt-6 w-full" onClick={handleVerify} disabled={loading || otpCode.length < 6}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Verifying...
             </>
           ) : (
             "Verify"
           )}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
+        </button>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
           Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
+          <button type="button" onClick={handleResend} className="font-semibold text-foreground underline underline-offset-4 hover:text-[hsl(72_74%_52%)]">
             Resend
           </button>
         </p>
@@ -137,97 +131,91 @@ export default function Register() {
           Already have an account?{" "}
           <Link
             to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
-            className="text-primary font-medium hover:underline"
+            className="font-semibold text-foreground underline underline-offset-4 hover:text-[hsl(72_74%_52%)]"
           >
             Log in
           </Link>
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
+      <button
+        type="button"
         onClick={handleGoogle}
+        className="flex w-full items-center justify-center gap-2.5 border border-border bg-background px-6 py-3.5 text-sm text-ink transition-colors hover:border-foreground"
       >
-        <GoogleIcon className="w-5 h-5 mr-2" />
+        <GoogleIcon className="h-5 w-5" />
         Continue with Google
-      </Button>
+      </button>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
+      <div className="my-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">or</span>
+        <span className="h-px flex-1 bg-border" />
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div role="alert" className="mb-5 border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="email"
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <label className="block">
+          <span className="label-eyebrow mb-1.5 block">Email</span>
+          <span className="relative block">
+            <Mail className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <input
               type="email"
               autoComplete="email"
               autoFocus
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
+              className="block w-full border-b border-border bg-transparent py-3 pl-6 text-sm text-ink placeholder:text-muted-foreground/60 focus:border-b-foreground focus:outline-none focus:ring-0"
               required
             />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
+          </span>
+        </label>
+        <label className="block">
+          <span className="label-eyebrow mb-1.5 block">Password</span>
+          <span className="relative block">
+            <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <input
               type="password"
               autoComplete="new-password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="block w-full border-b border-border bg-transparent py-3 pl-6 text-sm text-ink placeholder:text-muted-foreground/60 focus:border-b-foreground focus:outline-none focus:ring-0"
               required
             />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="confirm"
+          </span>
+        </label>
+        <label className="block">
+          <span className="label-eyebrow mb-1.5 block">Confirm Password</span>
+          <span className="relative block">
+            <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <input
               type="password"
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="block w-full border-b border-border bg-transparent py-3 pl-6 text-sm text-ink placeholder:text-muted-foreground/60 focus:border-b-foreground focus:outline-none focus:ring-0"
               required
             />
-          </div>
-        </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+          </span>
+        </label>
+        <button type="submit" className="btn-store btn-store--navy btn-sheen w-full" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Creating account...
             </>
           ) : (
             "Create account"
           )}
-        </Button>
+        </button>
       </form>
     </AuthLayout>
   );

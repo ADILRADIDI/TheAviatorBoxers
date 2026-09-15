@@ -83,11 +83,26 @@ module.exports = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'marquee-scroll': {
+  				from: { transform: 'translateX(0)' },
+  				to: { transform: 'translateX(-50%)' }
+  			},
+  			'floaty': {
+  				'0%, 100%': { transform: 'translateY(0) rotate(-1.5deg)' },
+  				'50%': { transform: 'translateY(-14px) rotate(1.5deg)' }
+  			},
+  			'shimmer': {
+  				from: { backgroundPosition: '-400px 0' },
+  				to: { backgroundPosition: '400px 0' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'marquee': 'marquee-scroll 36s linear infinite',
+  			'floaty': 'floaty 7s ease-in-out infinite',
+  			'shimmer': 'shimmer 1.4s linear infinite'
   		}
   	}
   },

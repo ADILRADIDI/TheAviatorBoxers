@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Package, AlertCircle } from "lucide-react";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import PageHeader from "@/components/storefront/PageHeader";
 import { formatPrice } from "@/lib/store";
 import { useLanguage } from "@/lib/language";
@@ -67,21 +66,20 @@ export default function OrderTracking() {
 
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Commande")} title={t("Suivre ma commande")} subtitle={t("Retrouvez l'état de votre livraison avec votre référence et votre téléphone.")} />
       <main className="container-edge py-12">
         <div className="mx-auto max-w-xl">
           <form onSubmit={submit} className="border border-border bg-background p-6 sm:p-8">
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Numéro de commande")}</span>
-              <input required value={form.orderNumber} onChange={(event) => setForm({ ...form, orderNumber: event.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder="AVT-..." autoComplete="off" />
+              <input required value={form.orderNumber} onChange={(event) => setForm({ ...form, orderNumber: event.target.value })} className="block w-full border-none border-b border-border bg-transparent px-0 py-3 text-sm focus:border-b-ink focus:outline-none focus:ring-0" placeholder="AVT-..." autoComplete="off" />
             </label>
             <label className="mt-4 block">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Téléphone utilisé à la commande")}</span>
-              <input required type="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder="06 12 34 56 78" autoComplete="tel" />
+              <input required type="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} className="block w-full border-none border-b border-border bg-transparent px-0 py-3 text-sm focus:border-b-ink focus:outline-none focus:ring-0" placeholder="06 12 34 56 78" autoComplete="tel" />
             </label>
             {error && <p role="alert" className="mt-4 flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{error}</p>}
-            <button type="submit" disabled={loading} className="mt-6 flex w-full items-center justify-center gap-2 bg-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"><Search className="h-4 w-4" />{loading ? t("Recherche...") : t("Rechercher ma commande")}</button>
+            <button type="submit" disabled={loading} className="btn-store btn-store--lime btn-sheen mt-6 w-full disabled:opacity-50"><Search className="h-4 w-4" />{loading ? t("Recherche...") : t("Rechercher ma commande")}</button>
           </form>
 
           {order && (
@@ -115,7 +113,7 @@ export default function OrderTracking() {
               </select>
               <textarea value={returnForm.notes} onChange={(event) => setReturnForm({ ...returnForm, notes: event.target.value })} className="mt-3 w-full border border-border bg-background px-3 py-3 text-sm" placeholder={t("Précisions (optionnel)")} />
               {returnMessage && <p className="mt-3 text-sm text-muted-foreground">{returnMessage}</p>}
-              <button type="submit" className="mt-4 w-full bg-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white">{t("Envoyer la demande")}</button>
+              <button type="submit" className="btn-store btn-store--navy btn-sheen mt-4 w-full">{t("Envoyer la demande")}</button>
             </form>
           )}
 

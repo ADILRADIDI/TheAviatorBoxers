@@ -1,4 +1,3 @@
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import Hero from "@/components/home/Hero";
 import TrustBar from "@/components/home/TrustBar";
 import FeaturedCollection from "@/components/home/FeaturedCollection";
@@ -17,7 +16,6 @@ export default function Home() {
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }]));
   return (
     <>
-      <AnnouncementBar />
       <Hero />
       <TrustBar />
       <FeaturedCollection />

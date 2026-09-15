@@ -1,6 +1,5 @@
 import { useState } from "react";
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import StarRating from "@/components/storefront/StarRating";
 import Reveal from "@/components/storefront/Reveal";
 import { useAsync } from "@/lib/useAsync";
@@ -66,13 +65,12 @@ export default function Reviews() {
 
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Témoignages")} title={t("Avis clients")} subtitle={t("La confiance de nos clients est notre plus belle récompense.")} />
 
       <div className="container-edge py-12 lg:py-16">
         {/* Rating summary */}
         <div className="mx-auto mb-12 flex max-w-md flex-col items-center border border-border bg-secondary p-8 text-center">
-          <p className="font-display text-5xl font-bold">4.9</p>
+          <p className="font-display text-5xl">4.9</p>
           <StarRating value={5} size={20} className="mt-2" />
           <p className="mt-2 text-sm text-muted-foreground">{t("Basé sur les avis de nos clients")}</p>
         </div>
@@ -85,7 +83,8 @@ export default function Reviews() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {list.map((r, i) => (
               <Reveal key={r.id || i} delay={(i % 3) * 0.08}>
-                <figure className="flex h-full flex-col border border-border p-6">
+                <figure className="group relative flex h-full flex-col border border-border bg-background p-6 transition-colors duration-300 hover:bg-foreground/[0.02]">
+                  <span className="absolute right-0 top-0 h-8 w-8 bg-gradient-to-bl from-[hsl(72_74%_52%)] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <Quote className="h-6 w-6 text-accent-lime" fill="currentColor" />
                   <blockquote className="mt-4 flex-1 text-sm leading-relaxed">"{t(r.comment)}"</blockquote>
                   <StarRating value={r.rating} size={14} className="mt-4" />
@@ -104,15 +103,15 @@ export default function Reviews() {
           <p className="mt-2 text-sm text-muted-foreground">{t("Votre avis sera vérifié avant publication.")}</p>
           <form onSubmit={submitReview} className="mt-6 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder={t("Votre nom")} aria-label={t("Votre nom")} />
-              <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder={t("Votre ville")} aria-label={t("Votre ville")} />
+              <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="block w-full border-none border-b border-border bg-transparent px-0 py-2.5 text-sm focus:border-b-ink focus:outline-none focus:ring-0" placeholder={t("Votre nom")} aria-label={t("Votre nom")} />
+              <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="block w-full border-none border-b border-border bg-transparent px-0 py-2.5 text-sm focus:border-b-ink focus:outline-none focus:ring-0" placeholder={t("Votre ville")} aria-label={t("Votre ville")} />
             </div>
             <select value={form.rating} onChange={(event) => setForm({ ...form, rating: event.target.value })} className="w-full border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" aria-label={t("Note")}>
               {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} {value > 1 ? t("étoiles") : t("étoile")}</option>)}
             </select>
-            <textarea required minLength={10} rows={4} value={form.comment} onChange={(event) => setForm({ ...form, comment: event.target.value })} className="w-full border border-border bg-background px-4 py-3 text-sm focus:border-navy focus:outline-none" placeholder={t("Votre avis")} aria-label={t("Votre avis")} />
+            <textarea required minLength={10} rows={4} value={form.comment} onChange={(event) => setForm({ ...form, comment: event.target.value })} className="block w-full resize-none border-none border-b border-border bg-transparent px-0 py-2.5 text-sm focus:border-b-ink focus:outline-none focus:ring-0" placeholder={t("Votre avis")} aria-label={t("Votre avis")} />
             {message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
-            <button disabled={submitting} className="w-full bg-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50">{submitting ? t("Envoi...") : t("Envoyer mon avis")}</button>
+            <button disabled={submitting} className="btn-store btn-store--navy btn-sheen w-full disabled:opacity-50">{submitting ? t("Envoi...") : t("Envoyer mon avis")}</button>
           </form>
         </section>
       </div>

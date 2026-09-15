@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/lib/language";
 import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
@@ -42,7 +41,6 @@ export default function FAQ() {
 
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Aide")} title={t("Questions fréquentes")} subtitle={t("Tout ce que vous devez savoir sur nos produits et services.")} />
 
       <div className="container-edge py-12 lg:py-16">
@@ -53,7 +51,7 @@ export default function FAQ() {
               <button
                 key={cat}
                 onClick={() => { setFilter(cat); setOpen(0); }}
-                className={`border px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors ${filter === cat ? "border-navy bg-navy text-white" : "border-border hover:border-navy"}`}
+                className={`chip ${filter === cat ? "is-on" : ""}`}
               >
                 {t(cat)}
               </button>
@@ -81,7 +79,7 @@ export default function FAQ() {
           <div className="mt-10 border border-border bg-secondary p-8 text-center">
             <h3 className="font-display text-xl font-bold">{t("Vous ne trouvez pas votre réponse ?")}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t("Notre équipe est à votre disposition.")}</p>
-            <Link to="/contact" className="mt-5 inline-block bg-navy px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-white">{t("Nous contacter")}</Link>
+            <Link to="/contact" className="btn-store btn-store--navy btn-sheen mt-5">{t("Nous contacter")}</Link>
           </div>
         </div>
       </div>

@@ -6,7 +6,6 @@ import { useAsync } from "@/lib/useAsync";
 import { fetchProducts, formatPrice, SIZES, validateCoupon } from "@/lib/store";
 import { Image } from "@/components/ui/image";
 import { useCart } from "@/lib/cart-context";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import PageHeader from "@/components/storefront/PageHeader";
 import { useLanguage } from "@/lib/language";
 import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
@@ -93,7 +92,6 @@ export default function Packs() {
 
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Le pack signature")} title={t("Composez votre pack")} subtitle={t("Choisissez vos couleurs, vos tailles, et profitez d'un tarif avantageux.")} />
 
       <div className="relative overflow-hidden">
@@ -250,7 +248,7 @@ export default function Packs() {
                 </div>
               </div>
               <button
-                className="btn-shine mt-5 flex w-full items-center justify-center gap-2 bg-navy py-4 text-xs font-bold uppercase tracking-[0.18em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-store btn-store--navy btn-sheen mt-5 w-full disabled:cursor-not-allowed"
                 disabled={!allComplete}
                 onClick={handleAddToCart}
               >

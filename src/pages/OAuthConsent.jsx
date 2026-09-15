@@ -2,7 +2,6 @@ const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me
 
 import React, { useEffect, useState } from "react";
 import { appParams } from "@/lib/app-params";
-import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
@@ -139,8 +138,8 @@ export default function OAuthConsent() {
   if (checking) {
     return (
       <AuthLayout icon={ShieldCheck} title="Authorize access">
-        <div className="flex items-center justify-center py-6 text-muted-foreground">
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" aria-hidden="true" />
+        <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
           Loading…
         </div>
       </AuthLayout>
@@ -166,7 +165,7 @@ export default function OAuthConsent() {
   if (reconnect) {
     return (
       <AuthLayout icon={ShieldCheck} title="Reconnect required">
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {reconnect}
         </div>
       </AuthLayout>
@@ -179,7 +178,7 @@ export default function OAuthConsent() {
   if (error && !info) {
     return (
       <AuthLayout icon={ShieldCheck} title="Authorize access">
-        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       </AuthLayout>
@@ -195,23 +194,23 @@ export default function OAuthConsent() {
       subtitle={`${client} wants to access ${appName} on your behalf`}
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div role="alert" className="mb-5 border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <p className="text-sm font-medium text-foreground mb-2">
+      <p className="mb-2 text-sm font-bold text-foreground">
         {tools.length ? `It will be able to use these tools in ${appName}:` : "No tools requested"}
       </p>
       {tools.length > 0 && (
-        <ul className="space-y-2 text-sm mb-6">
+        <ul className="mb-6 space-y-2">
           {tools.map((tool) => (
-            <li key={tool.name} className="flex flex-col">
-              <span className="text-foreground font-medium">
+            <li key={tool.name} className="border-l-2 border-[hsl(72_74%_52%)] pl-4">
+              <span className="block text-sm font-semibold text-foreground">
                 {tool.title || tool.name}
               </span>
               {tool.description && (
-                <span className="text-muted-foreground">{tool.description}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{tool.description}</span>
               )}
             </li>
           ))}
@@ -219,22 +218,23 @@ export default function OAuthConsent() {
       )}
 
       <div className="flex gap-3">
-        <Button
-          variant="outline"
-          className="flex-1 h-12 font-medium"
+        <button
+          type="button"
+          className="flex-1 border border-border bg-background px-6 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-ink transition-colors hover:border-foreground disabled:opacity-50"
           disabled={submitting}
           onClick={() => respond("deny")}
         >
           Deny
-        </Button>
-        <Button
-          className="flex-1 h-12 font-medium"
+        </button>
+        <button
+          type="button"
+          className="btn-store btn-store--navy btn-sheen flex-1"
           disabled={submitting}
           onClick={() => respond("approve")}
         >
-          {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Approve
-        </Button>
+        </button>
       </div>
     </AuthLayout>
   );

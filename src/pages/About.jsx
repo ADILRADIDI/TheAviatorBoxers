@@ -1,7 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Image } from "@/components/ui/image";
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import Reveal from "@/components/storefront/Reveal";
 import { IMAGES } from "@/lib/assets";
 import { Target, Eye, Heart, ShieldCheck } from "lucide-react";
@@ -22,7 +21,6 @@ export default function About() {
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "À propos", url: `${SITE_URL}/a-propos` }]));
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Notre histoire")} title={t("À propos")} subtitle={t("Une marque marocaine née de la passion du confort et du style.")} />
 
       <section className="py-16 lg:py-24">
@@ -54,9 +52,9 @@ export default function About() {
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {VALUES.map((v, i) => (
               <Reveal key={v.title} delay={i * 0.08}>
-                <div className="h-full border border-border bg-background p-8 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-accent-lime">
-                    <v.icon className="h-7 w-7 text-navy" strokeWidth={1.5} />
+                <div className="group h-full border border-border bg-background p-8 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center bg-foreground/[0.04] transition-colors duration-300 group-hover:bg-[hsl(72_74%_52%)]">
+                    <v.icon className="h-7 w-7 text-ink" strokeWidth={1.5} />
                   </div>
                   <h3 className="mt-4 text-lg font-bold">{t(v.title)}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{t(v.text)}</p>
@@ -76,7 +74,7 @@ export default function About() {
             { n: "2", l: "Certifications" },
           ].map((s, i) => (
             <Reveal key={i} delay={i * 0.08}>
-              <p className="font-display text-4xl font-bold text-accent-lime lg:text-5xl">{s.n}</p>
+              <p className="font-display text-4xl text-[hsl(72_74%_52%)] lg:text-5xl">{s.n}</p>
               <p className="mt-1 text-xs uppercase tracking-wider text-white/60">{t(s.l)}</p>
             </Reveal>
           ))}

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import Reveal from "@/components/storefront/Reveal";
+import SectionHeading from "@/components/storefront/SectionHeading";
 import ProductViewer3D from "@/components/home/ProductViewer3D";
 import { IMAGES } from "@/lib/assets";
 import { useLanguage } from "@/lib/language";
+import { cn } from "@/lib/utils";
 
 const ENGINEERING_POINTS = [
   {
@@ -52,76 +54,77 @@ export default function Benefits() {
   const [active, setActive] = useState(-1);
 
   return (
-    <section className="py-20 lg:py-28">
+    <section className="bg-paper py-20 lg:py-28">
       <div className="container-edge">
-        <Reveal className="max-w-2xl">
-          <span className="label-eyebrow">{t("Conçu pour le confort")}</span>
-          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            {t("L'ingénierie du confort")}
-          </h2>
-          <p className="mt-5 max-w-md text-muted-foreground">
-            {t("Chaque boxer The Aviator est pensé comme une pièce de précision : un tissu premium, une coupe étudiée, et une attention au détail qui fait la différence au quotidien.")}
-          </p>
-        </Reveal>
+        <SectionHeading
+          eyebrow={t("Conçu pour le confort")}
+          title={t("L'ingénierie du confort")}
+          sub={t("Chaque boxer The Aviator est pensé comme une pièce de précision : un tissu premium, une coupe étudiée, et une attention au détail qui fait la différence au quotidien.")}
+          className="max-w-2xl"
+        />
 
-        <div className="mt-12 grid gap-10 lg:grid-cols-2 lg:gap-16">
-          <Reveal className="lg:sticky lg:top-24 lg:self-start">
-            <div className="aspect-[4/3] overflow-hidden bg-muted">
-              <ProductViewer3D
-                src={IMAGES.product3d}
-                alt="Boxer The Aviator"
-                className="h-full w-full"
-                hotspots={ENGINEERING_POINTS.map((p) => ({ x: p.x, y: p.y, x3: p.x3, y3: p.y3, z3: p.z3, number: p.number, title: t(p.title) }))}
-                activeIndex={active}
-                onSelect={setActive}
-              />
+        <div className="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-20">
+          <Reveal className="lg:sticky lg:top-36 lg:self-start">
+            <div className="media-frame">
+              <div className="aspect-[4/3] overflow-hidden bg-muted">
+                <ProductViewer3D
+                  src={IMAGES.product3d}
+                  alt="Boxer The Aviator"
+                  className="h-full w-full"
+                  hotspots={ENGINEERING_POINTS.map((p) => ({ x: p.x, y: p.y, x3: p.x3, y3: p.y3, z3: p.z3, number: p.number, title: t(p.title) }))}
+                  activeIndex={active}
+                  onSelect={setActive}
+                />
+              </div>
             </div>
-            <p className="mt-3 text-center text-xs uppercase tracking-wider text-muted-foreground">
+            <p className="mt-4 text-center text-[11px] uppercase tracking-[0.2em] text-ink/40">
               {t("Cliquez sur un point pour découvrir chaque détail")}
             </p>
           </Reveal>
 
-          <ol className="m-0 grid gap-4 self-center p-0 list-none">
+          <div className="flex flex-col">
             {ENGINEERING_POINTS.map((point, index) => (
               <Reveal key={point.number} delay={index * 0.05}>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setActive(active === index ? -1 : index)}
-                    onMouseEnter={() => setActive(index)}
-                    onMouseLeave={() => setActive(-1)}
-                    aria-pressed={active === index}
-                    className={`group flex w-full items-start gap-3 border border-border p-4 text-left transition-colors hover:border-navy ${active === index ? "border-navy bg-secondary" : ""}`}
+                <button
+                  type="button"
+                  onClick={() => setActive(active === index ? -1 : index)}
+                  onMouseEnter={() => setActive(index)}
+                  onMouseLeave={() => setActive(-1)}
+                  aria-pressed={active === index}
+                  className={cn(
+                    "group flex w-full items-start gap-5 border-t border-border py-7 text-left transition-colors last:border-b",
+                    active === index && "bg-foreground/[0.03]",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center font-display text-base transition-colors duration-300",
+                      active === index ? "bg-[hsl(72_74%_52%)] text-navy" : "bg-navy text-white group-hover:bg-ink",
+                    )}
                   >
-                    <span
-                      className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-sm font-extrabold transition-colors ${
-                        active === index
-                          ? "bg-accent-lime text-navy"
-                          : "bg-navy text-white"
-                      }`}
-                    >
-                      {point.number}
-                    </span>
-                    <span>
-                      <span className="block text-lg font-bold">{t(point.title)}</span>
-                      <span className="mt-1.5 block text-sm text-muted-foreground">{t(point.text)}</span>
-                    </span>
-                  </button>
-                </li>
+                    {point.number}
+                  </span>
+                  <span className="flex-1">
+                    <span className="block font-display text-xl leading-tight">{t(point.title)}</span>
+                    <span className="mt-2 block text-sm leading-relaxed text-muted-foreground">{t(point.text)}</span>
+                  </span>
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(72_74%_52%)] opacity-0 transition-opacity duration-300" style={{ opacity: active === index ? 1 : 0 }} />
+                </button>
               </Reveal>
             ))}
 
-            <Reveal delay={0.2}>
-              <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-5 text-sm">
-                <span className="font-semibold uppercase tracking-wider text-navy">
+            <Reveal delay={0.15}>
+              <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
+                <span className="flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-navy">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[hsl(72_74%_52%)]" />
                   {t("Certifié GRS & GOTS")}
                 </span>
-                <span className="text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {t("Des standards internationaux pour un confort irréprochable")}
                 </span>
               </div>
             </Reveal>
-          </ol>
+          </div>
         </div>
       </div>
     </section>

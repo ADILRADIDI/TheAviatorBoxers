@@ -1,5 +1,4 @@
 import PageHeader from "@/components/storefront/PageHeader";
-import AnnouncementBar from "@/components/storefront/AnnouncementBar";
 import { SIZE_GUIDE } from "@/lib/store";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -12,7 +11,6 @@ export default function SizeGuide() {
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Guide des tailles", url: `${SITE_URL}/guide-des-tailles` }]));
   return (
     <>
-      <AnnouncementBar />
       <PageHeader eyebrow={t("Aide")} title={t("Guide des tailles")} subtitle={t("Trouvez la taille parfaite pour un confort optimal.")} />
 
       <div className="container-edge py-12 lg:py-16">
@@ -65,7 +63,7 @@ export default function SizeGuide() {
           </div>
 
           <div className="mt-10 text-center">
-            <Link to="/collection" className="inline-flex items-center gap-2 bg-navy px-8 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-white">
+            <Link to="/collection" className="btn-store btn-store--navy btn-sheen mx-auto">
               {t("Voir la collection")} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
