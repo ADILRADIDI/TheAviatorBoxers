@@ -12,6 +12,7 @@ import { useLanguage } from "@/lib/language";
 const NAV_PATHS = ["/notre-boxer", "/pourquoi-nous", "/avis", "/contact"];
 
 // Scrolling ticker of brand pillars — rendered above the nav row.
+// Transitions between exact height values (not max-height) for smooth, jank-free collapse.
 function HeaderTicker({ hidden }) {
   const ITEMS = [
     "LIVRAISON GRATUITE SUR CASABLANCA",
@@ -23,18 +24,28 @@ function HeaderTicker({ hidden }) {
   return (
     <div
       aria-hidden="true"
-      className={cn(
-        "relative overflow-hidden border-b border-white/10 bg-[hsl(216_72%_10%)] transition-all duration-500",
-        hidden ? "max-h-0 opacity-0" : "max-h-9 opacity-100",
-      )}
+      style={{
+        height: hidden ? "0" : "2.25rem",
+        transition: "height 500ms cubic-bezier(0.16,1,0.3,1)",
+        willChange: "height",
+      }}
+      className="relative overflow-hidden border-b border-white/10 bg-[hsl(216_72%_10%)]"
     >
-      <div className="marquee-track items-center gap-0 py-2">
-        {track.map((label, i) => (
-          <span key={i} className="flex shrink-0 items-center gap-5 px-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
-            <span className="h-1 w-1 rounded-full bg-[#C7D400]" />
-            {label}
-          </span>
-        ))}
+      <div
+        style={{
+          transform: hidden ? "translateY(-100%)" : "translateY(0)",
+          transition: "transform 500ms cubic-bezier(0.16,1,0.3,1)",
+          willChange: "transform",
+        }}
+      >
+        <div className="marquee-track items-center gap-0 py-2">
+          {track.map((label, i) => (
+            <span key={i} className="flex shrink-0 items-center gap-5 px-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
+              <span className="h-1 w-1 rounded-full bg-[#C7D400]" />
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -56,7 +67,16 @@ export default function Navbar() {
   const navLinks = NAV_PATHS.map((to, index) => ({ to, label: labels[index] }));
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const HIDE_AT = 60;   // px — scroll down past this to hide ticker
+    const SHOW_AT = 20;   // px — scroll back up below this to show ticker
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(prev => {
+        if (!prev && y > HIDE_AT) return true;   // hide
+        if (prev && y < SHOW_AT) return false;   // show
+        return prev;                              // no change → no re-render
+      });
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
