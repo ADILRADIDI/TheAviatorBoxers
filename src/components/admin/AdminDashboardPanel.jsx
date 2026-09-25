@@ -21,7 +21,7 @@ function useCountUp(target, duration = 700) {
   return value;
 }
 
-function Kpi({ icon: Icon, label, value, detail, tone = "navy", accent }) {
+function Kpi({ icon: Icon, label, value, detail, tone = "navy", accent, unit = "" }) {
   const animated = useCountUp(value);
   return (
     <article className="admin-card admin-card-hover admin-pop p-5">
@@ -36,7 +36,7 @@ function Kpi({ icon: Icon, label, value, detail, tone = "navy", accent }) {
       </div>
       <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <strong className="mt-1 block font-heading text-3xl font-black tracking-tight text-navy">
-        {typeof value === "number" ? formatNumber(animated) : value}
+        {typeof value === "number" ? `${formatNumber(animated)}${unit}` : value}
       </strong>
       <p className="mt-2 text-xs text-muted-foreground">{detail}</p>
     </article>
@@ -107,7 +107,7 @@ export default function AdminDashboardPanel({ data = {}, onNavigate = () => {}, 
 
       {/* KPI */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi icon={ArrowUpRight} label="Chiffre d'affaires" value={data.revenue} detail="Commandes non annulées" tone="lime" accent="CA total" />
+        <Kpi icon={ArrowUpRight} label="Chiffre d'affaires" value={data.revenue} unit=" DH" detail="Commandes non annulées" tone="lime" accent="CA total" />
         <Kpi icon={ClipboardList} label="Commandes" value={data.orders || 0} detail={`Sur la période : ${periods.find((p) => p.key === period)?.label || "Tout"}`} />
         <Kpi icon={Users} label="Clients" value={data.customers || 0} detail="Clients uniques" />
         <Kpi icon={Boxes} label="Stock faible" value={data.lowStock || 0} detail="Produits sous le seuil (5)" tone="lime" accent="Alertes" />

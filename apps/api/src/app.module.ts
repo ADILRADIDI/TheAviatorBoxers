@@ -107,7 +107,15 @@ class AppController {
   @Post("api/admin/roles")
   async createRole(@Body() body: { name: string; description?: string; permission_ids?: string[] }) {
     const [role] = await db.insert(roles).values({ name: body.name.trim().toUpperCase(), description: body.description }).returning();
-    if (Array.isArray(body.permission_ids) && body.permission_ids.length) await db.insert(rolePermissions).values(body.permission_ids.map((permissionId) => ({ roleId: role.id, permissionId })));
+    if (Array.isArray(body.permission_ids) && body.permission_ids.length) {
+      const allPerms = await db.select().from(permissions);
+      const mappedIds = body.permission_ids
+        .map((idOrKey) => allPerms.find((p) => p.id === idOrKey || p.key === idOrKey)?.id || idOrKey)
+        .filter((id) => allPerms.some((p) => p.id === id));
+      if (mappedIds.length) {
+        await db.insert(rolePermissions).values(mappedIds.map((permissionId) => ({ roleId: role.id, permissionId })));
+      }
+    }
     await audit("role.created", "role", role.id, { name: role.name });
     return role;
   }
@@ -117,7 +125,15 @@ class AppController {
     const [role] = await db.update(roles).set({ name: body.name?.trim().toUpperCase(), description: body.description }).where(eq(roles.id, id)).returning();
     if (Array.isArray(body.permission_ids)) {
       await db.delete(rolePermissions).where(eq(rolePermissions.roleId, id));
-      if (body.permission_ids.length) await db.insert(rolePermissions).values(body.permission_ids.map((permissionId) => ({ roleId: id, permissionId })));
+      if (body.permission_ids.length) {
+        const allPerms = await db.select().from(permissions);
+        const mappedIds = body.permission_ids
+          .map((idOrKey) => allPerms.find((p) => p.id === idOrKey || p.key === idOrKey)?.id || idOrKey)
+          .filter((id) => allPerms.some((p) => p.id === id));
+        if (mappedIds.length) {
+          await db.insert(rolePermissions).values(mappedIds.map((permissionId) => ({ roleId: id, permissionId })));
+        }
+      }
     }
     await audit("role.updated", "role", id, { name: role?.name });
     return role;
@@ -599,18 +615,19 @@ class AppController {
   async inventoryMovementsList(@Query() query: any) { return listPage(await db.select().from(inventoryMovements).orderBy(inventoryMovements.createdAt), query); }
 
   @Patch("api/admin/inventory/:id")
-  async adjustInventory(@Param("id") id: string, @Body() body: { stock: number; reason: string; note?: string }) {
-    if (!body.reason?.trim() || !Number.isInteger(Number(body.stock)) || Number(body.stock) < 0) throw new Error("INVALID_STOCK_ADJUSTMENT");
+  async adjustInventory(@Param("id") id: string, @Body() body: { stock: number; reason?: string; note?: string }) {
+    const reason = body.reason?.trim() || "Ajustement de stock";
+    if (!Number.isInteger(Number(body.stock)) || Number(body.stock) < 0) throw new Error("INVALID_STOCK_ADJUSTMENT");
     const updated = await db.transaction(async (transaction) => {
       const [variant] = await transaction.select().from(productVariants).where(eq(productVariants.id, id));
       if (!variant) return undefined;
       const before = variant.stock; const after = Number(body.stock); const delta = after - before;
       const [saved] = await transaction.update(productVariants).set({ stock: after }).where(eq(productVariants.id, id)).returning();
       const context = auditContext.getStore();
-      await transaction.insert(inventoryMovements).values({ variantId: id, type: delta >= 0 ? "increase" : "decrease", quantity: delta, beforeStock: before, afterStock: after, reason: body.reason.trim(), note: body.note, actorUserId: context?.userId });
+      await transaction.insert(inventoryMovements).values({ variantId: id, type: delta >= 0 ? "increase" : "decrease", quantity: delta, beforeStock: before, afterStock: after, reason, note: body.note, actorUserId: context?.userId });
       return saved;
     });
-    if (updated) await audit("inventory.adjusted", "product_variant", id, { stock: updated.stock, reason: body.reason });
+    if (updated) await audit("inventory.adjusted", "product_variant", id, { stock: updated.stock, reason });
     return updated;
   }
 
@@ -667,7 +684,7 @@ class AppController {
         const price = Number(item.price || 0);
         const current = topProductsMap.get(productId) || { product_id: productId, name: String(item.name || "Produit"), quantity: 0, revenue: 0 };
         current.quantity += quantity;
-        current.revenue += quantity * price;
+        current.revenue += (quantity * price) / 100;
         topProductsMap.set(productId, current);
       }
     }
@@ -760,7 +777,15 @@ class AppController {
 
   @Patch("api/admin/shipping-zones/:id")
   async updateShippingZone(@Param("id") id: string, @Body() body: any) {
-    const [row] = await db.update(shippingZones).set({ fee: Math.round(Number(body.fee || 0) * 100), freeThreshold: Math.round(Number(body.free_threshold || 0) * 100), deliveryTime: body.delivery_time, active: Boolean(body.active) }).where(eq(shippingZones.id, id)).returning();
+    const updateData: any = {
+      fee: Math.round(Number(body.fee || 0) * 100),
+      freeThreshold: Math.round(Number(body.free_threshold || 0) * 100),
+      deliveryTime: body.delivery_time || "24-48h",
+    };
+    if (body.region !== undefined) updateData.region = body.region;
+    if (body.city !== undefined) updateData.city = body.city;
+    if (body.active !== undefined) updateData.active = Boolean(body.active);
+    const [row] = await db.update(shippingZones).set(updateData).where(eq(shippingZones.id, id)).returning();
     return row;
   }
 

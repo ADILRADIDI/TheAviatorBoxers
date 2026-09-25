@@ -6,140 +6,62 @@
 
 const API = import.meta.env.VITE_API_URL || "";
 
+const SYSTEM_PERMISSIONS = [
+  { id: "dashboard.view", key: "dashboard.view", module: "Tableau de bord", label: "Consulter les indicateurs & graphiques" },
+  { id: "orders.view", key: "orders.view", module: "Commandes", label: "Voir les commandes" },
+  { id: "orders.update", key: "orders.update", module: "Commandes", label: "Modifier le statut & suivi" },
+  { id: "orders.cancel", key: "orders.cancel", module: "Commandes", label: "Annuler des commandes" },
+  { id: "orders.delete", key: "orders.delete", module: "Commandes", label: "Supprimer des commandes" },
+  { id: "products.view", key: "products.view", module: "Catalogue & Produits", label: "Voir les fiches produits" },
+  { id: "products.create", key: "products.create", module: "Catalogue & Produits", label: "Créer des produits" },
+  { id: "products.update", key: "products.update", module: "Catalogue & Produits", label: "Modifier les fiches & prix" },
+  { id: "products.delete", key: "products.delete", module: "Catalogue & Produits", label: "Supprimer des produits" },
+  { id: "categories.view", key: "categories.view", module: "Catalogue & Produits", label: "Gérer les catégories" },
+  { id: "inventory.view", key: "inventory.view", module: "Stock & Inventaire", label: "Consulter les stocks" },
+  { id: "inventory.adjust", key: "inventory.adjust", module: "Stock & Inventaire", label: "Ajuster les quantités de stock" },
+  { id: "inventory.update", key: "inventory.update", module: "Stock & Inventaire", label: "Modifier les seuils d'alerte" },
+  { id: "customers.view", key: "customers.view", module: "Clients", label: "Consulter la base clients" },
+  { id: "shipping.view", key: "shipping.view", module: "Livraison & Zones", label: "Consulter les zones de livraison" },
+  { id: "shipping.update", key: "shipping.update", module: "Livraison & Zones", label: "Modifier les tarifs & délais" },
+  { id: "discounts.view", key: "discounts.view", module: "Marketing & Codes promo", label: "Voir les codes promo" },
+  { id: "discounts.create", key: "discounts.create", module: "Marketing & Codes promo", label: "Créer des codes promo" },
+  { id: "discounts.update", key: "discounts.update", module: "Marketing & Codes promo", label: "Modifier les remises" },
+  { id: "discounts.delete", key: "discounts.delete", module: "Marketing & Codes promo", label: "Supprimer des codes" },
+  { id: "reviews.view", key: "reviews.view", module: "Avis clients", label: "Voir les avis" },
+  { id: "reviews.update", key: "reviews.update", module: "Avis clients", label: "Approuver / Modérer les avis" },
+  { id: "users.view", key: "users.view", module: "Utilisateurs & Sécurité", label: "Voir les administrateurs" },
+  { id: "users.create", key: "users.create", module: "Utilisateurs & Sécurité", label: "Créer des administrateurs" },
+  { id: "users.update", key: "users.update", module: "Utilisateurs & Sécurité", label: "Modifier les accès utilisateurs" },
+  { id: "users.delete", key: "users.delete", module: "Utilisateurs & Sécurité", label: "Supprimer des utilisateurs" },
+  { id: "roles.view", key: "roles.view", module: "Rôles & Permissions", label: "Consulter les rôles" },
+  { id: "roles.create", key: "roles.create", module: "Rôles & Permissions", label: "Créer des rôles personnalisés" },
+  { id: "roles.update", key: "roles.update", module: "Rôles & Permissions", label: "Modifier les permissions des rôles" },
+  { id: "roles.delete", key: "roles.delete", module: "Rôles & Permissions", label: "Supprimer des rôles" },
+  { id: "settings.view", key: "settings.view", module: "Paramètres & Réglages", label: "Voir les réglages boutique" },
+  { id: "settings.update", key: "settings.update", module: "Paramètres & Réglages", label: "Modifier les réglages & pixels" },
+  { id: "notifications.view", key: "notifications.view", module: "Notifications", label: "Gérer les alertes" },
+  { id: "audit_logs.view", key: "audit_logs.view", module: "Audit & Sécurité", label: "Consulter le journal d'audit" }
+];
+
 // Initial Mock Store Data
-const MOCK_STORAGE_KEY = "aviator_admin_mock_db_v3";
+const MOCK_STORAGE_KEY = "aviator_admin_clean_v4";
 
 function getInitialMockDb() {
   return {
     dashboard: {
-      totalRevenue: 14850000, // 148,500 DH in cents
-      ordersCount: 412,
-      deliveredCount: 388,
-      returnRate: 1.8,
-      avgOrderValue: 24500, // 245 DH in cents
-      revenueChange: "+14.5%",
-      ordersChange: "+18.2%",
-      chartData: [
-        { date: "01/09", revenue: 4200, orders: 12 },
-        { date: "05/09", revenue: 5800, orders: 16 },
-        { date: "10/09", revenue: 8400, orders: 24 },
-        { date: "15/09", revenue: 9900, orders: 28 },
-        { date: "20/09", revenue: 12400, orders: 35 },
-      ],
-      topProducts: [
-        { name: "Pack 2 Boxers THE AVIATOR (Noir & Marine)", sales: 245, revenue: 24255 },
-        { name: "Pack 2 Boxers THE AVIATOR (Marine & Royal)", sales: 167, revenue: 16533 },
-      ],
-      recentOrders: [
-        { id: "ord-101", customerName: "Karim Bennani", city: "Casablanca", total: 9900, status: "nouvelle", createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
-        { id: "ord-102", customerName: "Yassine El Amrani", city: "Rabat", total: 19800, status: "confirmee", createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
-        { id: "ord-103", customerName: "Mehdi Tazi", city: "Marrakech", total: 9900, status: "preparation", createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
-        { id: "ord-104", customerName: "Omar Chraibi", city: "Tanger", total: 14900, status: "expediee", createdAt: new Date(Date.now() - 1000 * 60 * 360).toISOString() },
-        { id: "ord-105", customerName: "Amine Alami", city: "Fès", total: 9900, status: "livree", createdAt: new Date(Date.now() - 1000 * 60 * 720).toISOString() },
-      ],
+      totalRevenue: 0,
+      ordersCount: 0,
+      deliveredCount: 0,
+      returnRate: 0,
+      avgOrderValue: 0,
+      revenueChange: "0%",
+      ordersChange: "0%",
+      chartData: [],
+      topProducts: [],
+      recentOrders: [],
     },
-    orders: [
-      {
-        id: "ord-101",
-        orderNumber: "AV-2026-0412",
-        customerName: "Karim Bennani",
-        phone: "0661234567",
-        city: "Casablanca",
-        address: "25 Bd d'Anfa, Étage 3",
-        status: "nouvelle",
-        itemsCount: 1,
-        total: 9900,
-        paymentMethod: "cod",
-        shippingFee: 0,
-        traffic_source: "TIKTOK",
-        trafficSource: "TIKTOK",
-        utm_source: "tiktok",
-        utm_campaign: "launch_morocco_ugc",
-        createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-        items: [{ name: "Pack 2 Boxers THE AVIATOR", color: "Noir / Bleu Marine", size: "L", quantity: 1, price: 9900 }]
-      },
-      {
-        id: "ord-102",
-        orderNumber: "AV-2026-0411",
-        customerName: "Yassine El Amrani",
-        phone: "0662345678",
-        city: "Rabat",
-        address: "12 Rue Agdal",
-        status: "confirmee",
-        itemsCount: 2,
-        total: 19800,
-        paymentMethod: "cod",
-        shippingFee: 0,
-        traffic_source: "INSTAGRAM",
-        trafficSource: "INSTAGRAM",
-        utm_source: "instagram",
-        utm_campaign: "reels_comfort_99dh",
-        createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-        items: [{ name: "Pack 2 Boxers THE AVIATOR", color: "Bleu Royal / Blanc", size: "M", quantity: 2, price: 9900 }]
-      },
-      {
-        id: "ord-103",
-        orderNumber: "AV-2026-0410",
-        customerName: "Mehdi Tazi",
-        phone: "0663456789",
-        city: "Marrakech",
-        address: "44 Av. Mohamed VI, Guéliz",
-        status: "preparation",
-        itemsCount: 1,
-        total: 9900,
-        paymentMethod: "cod",
-        shippingFee: 2500,
-        traffic_source: "FACEBOOK",
-        trafficSource: "FACEBOOK",
-        utm_source: "facebook",
-        utm_campaign: "retargeting_cart",
-        createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-        items: [{ name: "Pack 2 Boxers THE AVIATOR", color: "Noir / Gris", size: "XL", quantity: 1, price: 9900 }]
-      },
-      {
-        id: "ord-104",
-        orderNumber: "AV-2026-0409",
-        customerName: "Omar Chraibi",
-        phone: "0664567890",
-        city: "Tanger",
-        address: "Résidence Malabata, Bloc B",
-        status: "expediee",
-        itemsCount: 2,
-        total: 19800,
-        paymentMethod: "cod",
-        shippingFee: 2500,
-        traffic_source: "YOUTUBE",
-        trafficSource: "YOUTUBE",
-        utm_source: "youtube",
-        utm_campaign: "lifestyle_video_ad",
-        createdAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-        items: [{ name: "Pack 2 Boxers THE AVIATOR", color: "Bleu Marine / Noir", size: "L", quantity: 2, price: 9900 }]
-      },
-      {
-        id: "ord-105",
-        orderNumber: "AV-2026-0408",
-        customerName: "Amine Alami",
-        phone: "0665678901",
-        city: "Fès",
-        address: "7 Route d'Imouzzer",
-        status: "livree",
-        itemsCount: 1,
-        total: 9900,
-        paymentMethod: "cod",
-        shippingFee: 2500,
-        traffic_source: "DIRECT",
-        trafficSource: "DIRECT",
-        createdAt: new Date(Date.now() - 1000 * 60 * 720).toISOString(),
-        items: [{ name: "Pack 2 Boxers THE AVIATOR", color: "Bleu Marine / Blanc", size: "M", quantity: 1, price: 9900 }]
-      },
-    ],
-    customers: [
-      { id: "cust-1", name: "Karim Bennani", email: "karim.bennani@gmail.com", phone: "0661234567", city: "Casablanca", ordersCount: 3, totalSpent: 29700, lastOrderAt: new Date().toISOString() },
-      { id: "cust-2", name: "Yassine El Amrani", email: "yassine.amrani@outlook.com", phone: "0662345678", city: "Rabat", ordersCount: 2, totalSpent: 24800, lastOrderAt: new Date().toISOString() },
-      { id: "cust-3", name: "Mehdi Tazi", email: "m.tazi@gmail.com", phone: "0663456789", city: "Marrakech", ordersCount: 1, totalSpent: 9900, lastOrderAt: new Date().toISOString() },
-      { id: "cust-4", name: "Omar Chraibi", email: "omar.chr@yahoo.fr", phone: "0664567890", city: "Tanger", ordersCount: 2, totalSpent: 24800, lastOrderAt: new Date().toISOString() },
-      { id: "cust-5", name: "Amine Alami", email: "amine.alami@gmail.com", phone: "0665678901", city: "Fès", ordersCount: 4, totalSpent: 39600, lastOrderAt: new Date().toISOString() },
-    ],
+    orders: [],
+    customers: [],
     products: [
       {
         id: "prod-1",
@@ -177,23 +99,15 @@ function getInitialMockDb() {
       { id: "col-6", name: "Anthracite", nameFr: "Anthracite", nameDarija: "فحمي", hex: "#374151", code: "ANTHRACITE", active: true, sortOrder: 6 },
     ],
     variants: [
-      { id: "var-1", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Noir", size: "M", sku: "AV-PK-BK-M", stock: 85, price: 9900, lowStockThreshold: 15 },
-      { id: "var-2", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Noir", size: "L", sku: "AV-PK-BK-L", stock: 110, price: 9900, lowStockThreshold: 15 },
-      { id: "var-3", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Noir", size: "XL", sku: "AV-PK-BK-XL", stock: 65, price: 9900, lowStockThreshold: 15 },
-      { id: "var-4", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Bleu Marine", size: "L", sku: "AV-PK-NV-L", stock: 95, price: 9900, lowStockThreshold: 15 },
-      { id: "var-5", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Bleu Royal", size: "M", sku: "AV-PK-RY-M", stock: 48, price: 9900, lowStockThreshold: 15 },
-      { id: "var-6", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Blanc", size: "L", sku: "AV-PK-WH-L", stock: 52, price: 9900, lowStockThreshold: 15 },
-      { id: "var-7", product_name: "Pack 2 Boxers THE AVIATOR", productName: "Pack 2 Boxers THE AVIATOR", color_name: "Gris", size: "XL", sku: "AV-PK-GR-XL", stock: 35, price: 9900, lowStockThreshold: 15 },
+      { id: "var-1", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir", color_name: "Noir", size: "M", sku: "AV-PK-BK-M", stock: 85, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-2", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir", color_name: "Noir", size: "L", sku: "AV-PK-BK-L", stock: 110, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-3", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir", color_name: "Noir", size: "XL", sku: "AV-PK-BK-XL", stock: 65, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-4", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Bleu marine", color_name: "Bleu marine", size: "L", sku: "AV-PK-NV-L", stock: 95, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-5", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Bleu royal", color_name: "Bleu royal", size: "M", sku: "AV-PK-RY-M", stock: 48, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-6", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Blanc", color_name: "Blanc", size: "L", sku: "AV-PK-WH-L", stock: 52, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-7", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Gris chiné", color_name: "Gris chiné", size: "XL", sku: "AV-PK-GR-XL", stock: 35, price: 99, lowStockThreshold: 15, active: true },
     ],
-    inventory: [
-      { id: "inv-1", sku: "AV-PK-BK-M", productName: "Pack 2 Boxers Noir M", currentStock: 85, minStock: 15, status: "ok" },
-      { id: "inv-2", sku: "AV-PK-BK-L", productName: "Pack 2 Boxers Noir L", currentStock: 110, minStock: 15, status: "ok" },
-      { id: "inv-3", sku: "AV-PK-BK-XL", productName: "Pack 2 Boxers Noir XL", currentStock: 65, minStock: 15, status: "ok" },
-      { id: "inv-4", sku: "AV-PK-NV-L", productName: "Pack 2 Boxers Marine L", currentStock: 95, minStock: 15, status: "ok" },
-      { id: "inv-5", sku: "AV-PK-RY-M", productName: "Pack 2 Boxers Royal M", currentStock: 48, minStock: 15, status: "ok" },
-      { id: "inv-6", sku: "AV-PK-WH-L", productName: "Pack 2 Boxers Blanc L", currentStock: 52, minStock: 15, status: "ok" },
-      { id: "inv-7", sku: "AV-PK-GR-XL", productName: "Pack 2 Boxers Gris XL", currentStock: 35, minStock: 15, status: "ok" },
-    ],
+    inventoryMovements: [],
     shippingZones: [
       { id: "shp-1", region: "Casablanca & Environs", fee: 0, freeThreshold: 0, deliveryTime: "24-48h", active: true },
       { id: "shp-2", region: "Rabat, Salé, Mohammedia", fee: 2000, freeThreshold: 15000, deliveryTime: "24-48h", active: true },
@@ -246,34 +160,16 @@ function getInitialMockDb() {
         name: "SUPER_ADMIN",
         label: "Super Administrateur",
         description: "Accès complet à tous les modules, exports et réglages.",
-        permissions: [
-          { key: "dashboard.view" }, { key: "orders.view" }, { key: "orders.manage" },
-          { key: "products.view" }, { key: "products.manage" }, { key: "inventory.view" },
-          { key: "shipping.view" }, { key: "discounts.view" }, { key: "reviews.view" },
-          { key: "users.view" }, { key: "roles.view" }, { key: "settings.view" }
-        ],
-        all_permissions: [
-          { key: "dashboard.view", label: "Voir le tableau de bord", module: "dashboard" },
-          { key: "orders.view", label: "Voir les commandes", module: "orders" },
-          { key: "orders.manage", label: "Gérer les commandes", module: "orders" },
-          { key: "products.view", label: "Voir les produits", module: "products" },
-          { key: "products.manage", label: "Gérer les produits", module: "products" },
-          { key: "inventory.view", label: "Voir l'inventaire", module: "inventory" },
-          { key: "shipping.view", label: "Voir la livraison", module: "shipping" },
-          { key: "discounts.view", label: "Voir les coupons", module: "discounts" },
-          { key: "reviews.view", label: "Voir les avis", module: "reviews" },
-          { key: "users.view", label: "Voir les utilisateurs", module: "users" },
-          { key: "roles.view", label: "Voir les rôles", module: "roles" },
-          { key: "settings.view", label: "Voir les réglages", module: "settings" },
-        ]
+        permissions: [...SYSTEM_PERMISSIONS],
+        all_permissions: [...SYSTEM_PERMISSIONS]
       },
       {
         id: "role-logistique",
         name: "GESTION_COMMANDES",
         label: "Gestionnaire Logistique",
-        description: "Accès aux commandes, statuts d'expédition et stock.",
-        permissions: [{ key: "dashboard.view" }, { key: "orders.view" }, { key: "orders.manage" }, { key: "inventory.view" }],
-        all_permissions: []
+        description: "Accès aux commandes, statuts d'expédition et gestion du stock.",
+        permissions: SYSTEM_PERMISSIONS.filter(p => ["dashboard.view", "orders.view", "orders.update", "inventory.view", "inventory.adjust"].includes(p.key)),
+        all_permissions: [...SYSTEM_PERMISSIONS]
       }
     ],
     users: [
@@ -299,16 +195,8 @@ function getInitialMockDb() {
       meta_pixel_id: "",
       tiktok_pixel_id: "",
     },
-    notifications: [
-      { id: "notif-1", type: "order", title: "Nouvelle commande #AV-2026-0412", message: "Karim Bennani a commandé 1x Pack de 2 (99 DH)", read: false, createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
-      { id: "notif-2", type: "order", title: "Nouvelle commande #AV-2026-0411", message: "Yassine El Amrani a commandé 2x Packs (198 DH)", read: false, createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
-      { id: "notif-3", type: "stock", title: "Stock optimal", message: "L'inventaire des tailles M et L a été mis à jour", read: true, createdAt: new Date(Date.now() - 1000 * 60 * 360).toISOString() },
-    ],
-    auditLogs: [
-      { id: "log-1", actor: "admin@theaviator.local", action: "admin.login", entity: "session", createdAt: new Date().toISOString() },
-      { id: "log-2", actor: "admin@theaviator.local", action: "order.status_update", entity: "AV-2026-0409 (expédiée)", createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-      { id: "log-3", actor: "system", action: "inventory.sync", entity: "stock (ok)", createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
-    ]
+    notifications: [],
+    auditLogs: []
   };
 }
 
@@ -376,7 +264,65 @@ function handleMockRequest(path, options = {}) {
 
   // Dashboard
   if (cleanPath === "/api/admin/dashboard") {
-    return db.dashboard;
+    const period = queryParams.get("period") || "all";
+    let allOrders = [...(db.orders || [])];
+
+    if (period === "today") {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      allOrders = allOrders.filter(o => new Date(o.createdAt) >= startOfDay);
+    } else if (period === "7d") {
+      const past7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      allOrders = allOrders.filter(o => new Date(o.createdAt) >= past7d);
+    } else if (period === "30d") {
+      const past30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      allOrders = allOrders.filter(o => new Date(o.createdAt) >= past30d);
+    }
+
+    const nonCancelled = allOrders.filter(o => o.status !== "annulee");
+    const revenue = nonCancelled.reduce((sum, o) => sum + ((Number(o.total) || 0) / 100), 0);
+    const averageOrder = nonCancelled.length ? Math.round((revenue / nonCancelled.length) * 100) / 100 : 0;
+
+    const statusCounts = { nouvelle: 0, confirmee: 0, preparation: 0, expediee: 0, livree: 0 };
+    for (const o of allOrders) {
+      if (statusCounts[o.status] !== undefined) {
+        statusCounts[o.status] += 1;
+      } else {
+        statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+      }
+    }
+
+    const topProductsMap = new Map();
+    for (const order of nonCancelled) {
+      if (!Array.isArray(order.items)) continue;
+      for (const item of order.items) {
+        const prodName = String(item.name || "Pack 2 Boxers THE AVIATOR");
+        const quantity = Number(item.quantity || 1);
+        const itemPrice = (Number(item.price || 0) > 500) ? (Number(item.price) / 100) : Number(item.price || 99);
+        const current = topProductsMap.get(prodName) || { product_id: prodName, name: prodName, quantity: 0, revenue: 0 };
+        current.quantity += quantity;
+        current.revenue += quantity * itemPrice;
+        topProductsMap.set(prodName, current);
+      }
+    }
+    const topProducts = [...topProductsMap.values()]
+      .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+      .slice(0, 5);
+
+    const lowStock = (db.variants || []).filter(v => (v.stock || 0) < (v.lowStockThreshold || 5)).length;
+    const pendingReviews = (db.reviews || []).filter(r => r.status === "pending").length;
+
+    return {
+      orders: allOrders.length,
+      customers: new Set(allOrders.map(o => o.phone).filter(Boolean)).size,
+      revenue: Math.round(revenue),
+      averageOrder,
+      lowStock,
+      pendingReviews,
+      statusCounts,
+      topProducts,
+      period,
+    };
   }
 
   // Notifications inbox count
@@ -432,7 +378,36 @@ function handleMockRequest(path, options = {}) {
 
   // Customers
   if (cleanPath === "/api/admin/customers" || cleanPath === "/api/admin/clients") {
-    return { data: db.customers, total: db.customers.length, page: 1, limit: 50, pages: 1 };
+    const customerMap = new Map();
+    for (const order of (db.orders || [])) {
+      const phoneKey = (order.phone || "").replace(/[\s-]/g, "") || order.customerName || order.id;
+      const name = (order.customerName || `${order.firstName || ""} ${order.lastName || ""}`).trim() || "Client invité";
+      const totalDh = (Number(order.total) || 0) / 100;
+      
+      const existing = customerMap.get(phoneKey) || {
+        id: "cust-" + phoneKey,
+        name,
+        email: order.email || "",
+        phone: order.phone || "—",
+        city: order.city || "—",
+        orders: 0,
+        ordersCount: 0,
+        totalSpent: 0,
+        lastOrder: order.createdAt,
+      };
+
+      existing.orders += 1;
+      existing.ordersCount += 1;
+      if (order.status !== "annulee") {
+        existing.totalSpent += totalDh;
+      }
+      if (new Date(order.createdAt) > new Date(existing.lastOrder || 0)) {
+        existing.lastOrder = order.createdAt;
+      }
+      customerMap.set(phoneKey, existing);
+    }
+    const computedCustomers = [...customerMap.values()];
+    return { data: computedCustomers, total: computedCustomers.length, page: 1, limit: 50, pages: 1 };
   }
 
   // Products
@@ -542,7 +517,44 @@ function handleMockRequest(path, options = {}) {
 
   // Inventory
   if (cleanPath === "/api/admin/inventory") {
-    return db.inventory;
+    if (method === "GET") {
+      return db.variants || [];
+    }
+  }
+
+  if (cleanPath === "/api/admin/inventory/movements") {
+    return db.inventoryMovements || [];
+  }
+
+  if (cleanPath === "/api/admin/inventory/adjust" && method === "POST") {
+    const { variantId, quantity, type, reason } = body;
+    const idx = db.variants.findIndex(v => v.id === variantId || v.sku === variantId);
+    if (idx !== -1) {
+      const current = Number(db.variants[idx].stock || 0);
+      let nextStock = current;
+      const qtyNum = Number(quantity || 0);
+      if (type === "add" || type === "reassort") nextStock = current + qtyNum;
+      else if (type === "subtract" || type === "perte") nextStock = Math.max(0, current - qtyNum);
+      else if (type === "set" || type === "inventaire") nextStock = Math.max(0, qtyNum);
+      db.variants[idx].stock = nextStock;
+      
+      const movement = {
+        id: "mov-" + Date.now(),
+        variantId: db.variants[idx].id,
+        sku: db.variants[idx].sku,
+        productName: db.variants[idx].productName || "Pack 2 Boxers THE AVIATOR",
+        previousStock: current,
+        newStock: nextStock,
+        delta: nextStock - current,
+        reason: reason || type || "Ajustement manuel",
+        createdAt: new Date().toISOString()
+      };
+      if (!db.inventoryMovements) db.inventoryMovements = [];
+      db.inventoryMovements.unshift(movement);
+      saveMockDb(db);
+      return { ok: true, variant: db.variants[idx], movement };
+    }
+    return { ok: false, message: "Variante non trouvée" };
   }
 
   // Shipping Zones
@@ -615,19 +627,162 @@ function handleMockRequest(path, options = {}) {
     }
   }
 
+  // Permissions
+  if (cleanPath === "/api/admin/permissions") {
+    return SYSTEM_PERMISSIONS;
+  }
+
   // Roles
   if (cleanPath === "/api/admin/roles") {
-    return db.roles;
+    if (method === "GET") {
+      return (db.roles || []).map(r => ({
+        ...r,
+        all_permissions: SYSTEM_PERMISSIONS,
+      }));
+    }
+    if (method === "POST") {
+      const selectedIds = Array.isArray(body.permission_ids) ? body.permission_ids : [];
+      const rolePerms = SYSTEM_PERMISSIONS.filter(p => selectedIds.includes(p.id) || selectedIds.includes(p.key));
+      const newRole = {
+        id: "role-" + Date.now(),
+        name: (body.name || "NOUVEAU_ROLE").trim().toUpperCase(),
+        label: body.name || "Nouveau Rôle",
+        description: body.description || "",
+        permissions: rolePerms,
+        all_permissions: SYSTEM_PERMISSIONS,
+      };
+      db.roles = db.roles || [];
+      db.roles.push(newRole);
+      saveMockDb(db);
+      return newRole;
+    }
+  }
+
+  // Single Role Update / Delete / Users
+  if (cleanPath.startsWith("/api/admin/roles/")) {
+    const subPath = cleanPath.replace("/api/admin/roles/", "");
+    if (subPath.endsWith("/users")) {
+      const roleId = subPath.replace("/users", "");
+      return (db.users || []).filter(u => u.roles?.some(r => r.id === roleId || r.name === roleId) || u.role === roleId);
+    }
+    const id = subPath;
+    const idx = (db.roles || []).findIndex(r => r.id === id || r.name === id);
+    if (method === "PATCH") {
+      if (idx !== -1) {
+        const selectedIds = Array.isArray(body.permission_ids) ? body.permission_ids : null;
+        const rolePerms = selectedIds !== null
+          ? SYSTEM_PERMISSIONS.filter(p => selectedIds.includes(p.id) || selectedIds.includes(p.key))
+          : db.roles[idx].permissions;
+        db.roles[idx] = {
+          ...db.roles[idx],
+          name: (body.name || db.roles[idx].name).trim().toUpperCase(),
+          description: body.description !== undefined ? body.description : db.roles[idx].description,
+          permissions: rolePerms,
+          all_permissions: SYSTEM_PERMISSIONS,
+        };
+        saveMockDb(db);
+        return db.roles[idx];
+      }
+      return { ok: true };
+    }
+    if (method === "DELETE") {
+      if (idx !== -1) {
+        db.roles.splice(idx, 1);
+        saveMockDb(db);
+      }
+      return { ok: true };
+    }
   }
 
   // Users
   if (cleanPath === "/api/admin/users") {
     if (method === "GET") return db.users;
     if (method === "POST") {
-      const newUser = { id: "usr-" + Date.now(), ...body, active: true, createdAt: new Date().toISOString().slice(0, 10) };
+      const roleObj = body.role_id ? db.roles.find(r => r.id === body.role_id) : null;
+      const newUser = {
+        id: "usr-" + Date.now(),
+        name: body.name,
+        email: body.email,
+        roles: roleObj ? [roleObj] : [],
+        active: body.active !== false,
+        createdAt: new Date().toISOString().slice(0, 10),
+      };
       db.users.push(newUser);
       saveMockDb(db);
       return newUser;
+    }
+  }
+
+  // Single User Update / Delete
+  if (cleanPath.startsWith("/api/admin/users/")) {
+    const id = cleanPath.replace("/api/admin/users/", "");
+    const idx = db.users.findIndex(u => u.id === id || u.email === id);
+    if (method === "PATCH") {
+      if (idx !== -1) {
+        const roleObj = body.role_id ? db.roles.find(r => r.id === body.role_id) : null;
+        db.users[idx] = {
+          ...db.users[idx],
+          ...body,
+          roles: roleObj ? [roleObj] : (body.role_id === "" ? [] : db.users[idx].roles),
+        };
+        saveMockDb(db);
+        return db.users[idx];
+      }
+      return { ok: true };
+    }
+    if (method === "DELETE") {
+      if (idx !== -1) {
+        db.users.splice(idx, 1);
+        saveMockDb(db);
+      }
+      return { ok: true };
+    }
+  }
+
+  // Coupons
+  if (cleanPath === "/api/admin/coupons") {
+    if (method === "GET") return db.coupons;
+    if (method === "POST") {
+      const newCp = { id: "cp-" + Date.now(), ...body, usedCount: 0, active: true };
+      db.coupons.push(newCp);
+      saveMockDb(db);
+      return newCp;
+    }
+  }
+
+  // Single Coupon Update / Delete
+  if (cleanPath.startsWith("/api/admin/coupons/")) {
+    const id = cleanPath.replace("/api/admin/coupons/", "");
+    const idx = db.coupons.findIndex(c => c.id === id || c.code === id);
+    if (method === "PATCH") {
+      if (idx !== -1) {
+        db.coupons[idx] = { ...db.coupons[idx], ...body };
+        saveMockDb(db);
+        return db.coupons[idx];
+      }
+      return { ok: true };
+    }
+    if (method === "DELETE") {
+      if (idx !== -1) {
+        db.coupons.splice(idx, 1);
+        saveMockDb(db);
+      }
+      return { ok: true };
+    }
+  }
+
+  // Single Inventory Adjust
+  if (cleanPath.startsWith("/api/admin/inventory/")) {
+    const id = cleanPath.replace("/api/admin/inventory/", "");
+    const idx = db.variants.findIndex(v => v.id === id);
+    if (method === "PATCH") {
+      if (idx !== -1) {
+        const newStock = Number(body.stock || 0);
+        db.variants[idx].stock = newStock;
+        saveMockDb(db);
+        return db.variants[idx];
+      }
+      return { ok: true };
     }
   }
 
@@ -643,7 +798,34 @@ function handleMockRequest(path, options = {}) {
 
   // Notifications
   if (cleanPath === "/api/admin/notifications") {
-    return db.notifications;
+    if (method === "GET") return db.notifications;
+    if (method === "POST") {
+      const newNotif = { id: "notif-" + Date.now(), ...body, read: false, createdAt: new Date().toISOString() };
+      db.notifications.unshift(newNotif);
+      saveMockDb(db);
+      return newNotif;
+    }
+  }
+
+  // Single Notification Update / Delete
+  if (cleanPath.startsWith("/api/admin/notifications/")) {
+    const id = cleanPath.replace("/api/admin/notifications/", "");
+    const idx = db.notifications.findIndex(n => n.id === id);
+    if (method === "PATCH") {
+      if (idx !== -1) {
+        db.notifications[idx] = { ...db.notifications[idx], read: true };
+        saveMockDb(db);
+        return db.notifications[idx];
+      }
+      return { ok: true };
+    }
+    if (method === "DELETE") {
+      if (idx !== -1) {
+        db.notifications.splice(idx, 1);
+        saveMockDb(db);
+      }
+      return { ok: true };
+    }
   }
 
   // Audit Logs
@@ -669,6 +851,39 @@ function handleMockRequest(path, options = {}) {
         o.paymentMethod || "cod",
       ].join(","));
       return { content: [headers, ...rows].join("\n"), filename: `aviator-orders-${Date.now()}.csv` };
+    }
+    if (cleanPath.includes("customers") || cleanPath.includes("clients")) {
+      const headers = "Nom,Telephone,Ville,Commandes,Total_Depense_DH";
+      const customerMap = new Map();
+      for (const order of (db.orders || [])) {
+        const phoneKey = (order.phone || "").replace(/[\s-]/g, "") || order.customerName || order.id;
+        const name = (order.customerName || `${order.firstName || ""} ${order.lastName || ""}`).trim() || "Client invité";
+        const totalDh = (Number(order.total) || 0) / 100;
+        const existing = customerMap.get(phoneKey) || { name, phone: order.phone || "", city: order.city || "", orders: 0, totalSpent: 0 };
+        existing.orders += 1;
+        if (order.status !== "annulee") existing.totalSpent += totalDh;
+        customerMap.set(phoneKey, existing);
+      }
+      const rows = [...customerMap.values()].map(c => [
+        `"${c.name.replace(/"/g, '""')}"`,
+        c.phone,
+        `"${c.city.replace(/"/g, '""')}"`,
+        c.orders,
+        c.totalSpent.toFixed(2),
+      ].join(","));
+      return { content: [headers, ...rows].join("\n"), filename: `aviator-customers-${Date.now()}.csv` };
+    }
+    if (cleanPath.includes("inventory") || cleanPath.includes("inventaire") || cleanPath.includes("stock")) {
+      const headers = "SKU,Produit,Taille,Couleur,Stock_Disponible,Seuil_Alerte";
+      const rows = (db.variants || []).map(v => [
+        v.sku || "",
+        `"${(v.productName || "Pack 2 Boxers THE AVIATOR").replace(/"/g, '""')}"`,
+        v.size || "M",
+        `"${(v.color || v.color_name || "").replace(/"/g, '""')}"`,
+        v.stock ?? 0,
+        v.lowStockThreshold ?? 15,
+      ].join(","));
+      return { content: [headers, ...rows].join("\n"), filename: `aviator-inventory-${Date.now()}.csv` };
     }
     return { content: "id,nom,total\n1,Demo,100", filename: "export.csv" };
   }

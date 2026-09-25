@@ -449,7 +449,7 @@ export default function AdminOrdersBulkPanel({ data = [], refresh = () => {} }) 
                   <tbody className="divide-y divide-border">
                     {Array.isArray(detail.items) && detail.items.map((item, idx) => {
                       const qty = Number(item.quantity || 1);
-                      const unitPrice = Number(item.price || 0);
+                      const unitPrice = Number(item.price || 0) / 100;
                       const lineTotal = qty * unitPrice;
                       return (
                         <tr key={idx} className="hover:bg-secondary/20">

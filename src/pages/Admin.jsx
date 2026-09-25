@@ -195,7 +195,7 @@ export default function Admin() {
         </header>
 
         <main className="container-edge flex-1 py-7">
-          {tab !== "dashboard" && (
+          {!["dashboard", "inventory", "settings", "pixels", "acquisition", "roles", "users", "produits"].includes(tab) && (
             <div className="admin-card mb-6 flex flex-wrap items-center gap-3 p-4">
               <div className="relative min-w-[220px] flex-1 sm:max-w-xs">
                 <SearchIcon />
@@ -405,15 +405,10 @@ function AdminLogin({ onSuccess }) {
             <h1 className="font-heading text-3xl font-black tracking-tight text-navy">Connexion sécurisée</h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Accédez aux commandes, produits, promotions et pixels.</p>
             
-            <div className="mt-5 rounded-md bg-accent-lime/10 border border-accent-lime/30 p-3 text-xs text-navy">
-              <span className="font-bold">Identifiants par défaut :</span>
-              <p className="mt-1 font-mono text-[11px] text-black/70">
-                admin@theaviator.local / Aviator-Admin2026!
-              </p>
-            </div>
+
 
             <label className="mt-5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email
-              <input required type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="admin-input mt-2" placeholder="admin@theaviator.local" />
+              <input required type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="admin-input mt-2" placeholder="Email administrateur" />
             </label>
             <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mot de passe
               <input required type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="admin-input mt-2" placeholder="••••••••" />
@@ -527,62 +522,191 @@ function NotificationsPanel({ data, refresh, onRead }) {
 function Variants({ data, refresh }) {
   const items = Array.isArray(data) ? data : [];
   const products = useAsync(() => request("/api/admin/products?limit=100"), []);
-  const [form, setForm] = useState({ product_id: "", sku: "", size: "M", color: "", price: "", stock: "0", low_stock_threshold: "5" });
+  const colors = useAsync(() => request("/api/admin/colors"), []);
+  const [form, setForm] = useState({ product_id: "", sku: "", size: "M", color: "", price: "99", stock: "50", low_stock_threshold: "15" });
   const [notice, setNotice] = useState("");
+  const [adding, setAdding] = useState(false);
+
   const submitVariant = async (event) => {
     event.preventDefault();
-    if (!form.product_id || !form.sku || !form.color) {
-      setNotice("Renseignez le produit, le SKU et la couleur.");
+    if (!form.sku.trim() || !form.color.trim()) {
+      setNotice("Veuillez renseigner au minimum le SKU et la couleur.");
       return;
     }
-    await request("/api/admin/variants", { method: "POST", body: JSON.stringify(form) });
-    setForm({ product_id: "", sku: "", size: "M", color: "", price: "", stock: "0", low_stock_threshold: "5" });
+    const productId = form.product_id || products.data?.data?.[0]?.id || (Array.isArray(products.data) ? products.data[0]?.id : "") || "prod-1";
+    setAdding(true);
     setNotice("");
-    refresh();
+    try {
+      await request("/api/admin/variants", {
+        method: "POST",
+        body: JSON.stringify({
+          ...form,
+          product_id: productId,
+          sku: form.sku.trim().toUpperCase(),
+          price: Number(form.price) || 99,
+          stock: Number(form.stock) || 0,
+          low_stock_threshold: Number(form.low_stock_threshold) || 5
+        })
+      });
+      setForm({ product_id: "", sku: "", size: "M", color: "", price: "99", stock: "50", low_stock_threshold: "15" });
+      refresh();
+    } catch (err) {
+      setNotice(err.message || "Erreur lors de l'ajout de la variante.");
+    } finally {
+      setAdding(false);
+    }
   };
+
   const removeVariant = async (variant) => {
     if (window.confirm(`Supprimer la variante ${variant.sku} ?`)) {
       await request(`/api/admin/variants/${variant.id}`, { method: "DELETE" });
       refresh();
     }
   };
+
+  const productList = Array.isArray(products.data) ? products.data : products.data?.data || [];
+  const colorList = Array.isArray(colors.data) ? colors.data : colors.data?.data || [];
+
   return (
-    <Panel title="Variantes & inventaire" eyebrow="Stock par SKU">
-      <form onSubmit={submitVariant} className="mt-5 grid gap-3 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto]">
-        <select required value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="admin-input" aria-label="Produit">
-          <option value="">— Produit —</option>
-          {(products.data?.data || []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-        <input required placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })}
-        className="admin-input" aria-label="SKU" />
-        <select value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} className="admin-input" aria-label="Taille">
-          {["M", "L", "XL", "XXL"].map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <input required placeholder="Couleur" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="admin-input" aria-label="Couleur" />
-        <input type="number" min="0" placeholder="Prix DH" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="admin-input" aria-label="Prix" />
-        <input type="number" min="0" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className="admin-input" aria-label="Stock" />
-        <button className="admin-btn admin-btn-primary">Ajouter</button>
+    <Panel title="Variantes & stock" eyebrow="Catalogue & Références">
+      <form onSubmit={submitVariant} className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.5fr_1.2fr_0.8fr_1fr_0.8fr_0.8fr_auto] items-end border border-border bg-muted/15 p-4 rounded">
+        <div>
+          <label className="admin-label">Produit parent</label>
+          <select
+            value={form.product_id}
+            onChange={(e) => setForm({ ...form, product_id: e.target.value })}
+            className="w-full border border-border bg-background px-3 py-2 text-xs font-semibold"
+            aria-label="Produit"
+          >
+            <option value="">— Pack 2 Boxers (Défaut) —</option>
+            {productList.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="admin-label">SKU Unique</label>
+          <input
+            required
+            placeholder="ex: AV-PK-BK-M"
+            value={form.sku}
+            onChange={(e) => setForm({ ...form, sku: e.target.value })}
+            className="w-full border border-border bg-background px-3 py-2 text-xs font-mono font-bold uppercase"
+            aria-label="SKU"
+          />
+        </div>
+        <div>
+          <label className="admin-label">Taille</label>
+          <select
+            value={form.size}
+            onChange={(e) => setForm({ ...form, size: e.target.value })}
+            className="w-full border border-border bg-background px-3 py-2 text-xs font-semibold"
+            aria-label="Taille"
+          >
+            {["M", "L", "XL", "XXL"].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="admin-label">Couleur</label>
+          <input
+            required
+            list="variant-colors-list"
+            placeholder="ex: Noir, Bleu marine"
+            value={form.color}
+            onChange={(e) => setForm({ ...form, color: e.target.value })}
+            className="w-full border border-border bg-background px-3 py-2 text-xs font-semibold"
+            aria-label="Couleur"
+          />
+          <datalist id="variant-colors-list">
+            {colorList.map((c) => <option key={c.id || c.name} value={c.name} />)}
+          </datalist>
+        </div>
+        <div>
+          <label className="admin-label">Prix (DH)</label>
+          <input
+            type="number"
+            min="0"
+            placeholder="99"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            className="w-full border border-border bg-background px-3 py-2 text-xs font-semibold"
+            aria-label="Prix"
+          />
+        </div>
+        <div>
+          <label className="admin-label">Stock initial</label>
+          <input
+            type="number"
+            min="0"
+            placeholder="0"
+            value={form.stock}
+            onChange={(e) => setForm({ ...form, stock: e.target.value })}
+            className="w-full border border-border bg-background px-3 py-2 text-xs font-semibold"
+            aria-label="Stock"
+          />
+        </div>
+        <button
+          disabled={adding}
+          className="bg-navy px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-navy/90 disabled:opacity-50 h-[34px]"
+        >
+          {adding ? "..." : "Ajouter"}
+        </button>
       </form>
-      {notice && <p className="mt-3 text-sm text-destructive">{notice}</p>}
-      <p className="mt-4 text-sm text-muted-foreground">Stock réel par SKU, taille et couleur. Le prix saisi est en dirhams.</p>
-      <div className="admin-list-scroll mt-4 divide-y divide-black/10 border-y border-black/10">
+      {notice && <p className="mt-3 text-sm font-semibold text-destructive">{notice}</p>}
+      <p className="mt-4 text-xs text-muted-foreground">Gestion directe du stock et des prix par déclinaison SKU (taille + couleur).</p>
+
+      <div className="admin-list-scroll mt-4 divide-y divide-border border-y border-border">
         {items.map((variant) => {
-          const low = variant.stock <= variant.lowStockThreshold;
+          const currentStock = Number(variant.stock ?? variant.currentStock ?? 0);
+          const threshold = Number(variant.lowStockThreshold ?? variant.minStock ?? 5);
+          const low = currentStock <= threshold;
+          const colorName = variant.color || variant.color_name || variant.colorName || "Standard";
+          const sizeName = variant.size || "M";
+          const priceValue = variant.price ? (Number(variant.price) > 500 ? Math.round(Number(variant.price) / 100) : Number(variant.price)) : 99;
+
           return (
-            <div key={variant.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+            <div key={variant.id || variant.sku} className="flex flex-wrap items-center justify-between gap-4 py-3.5 hover:bg-muted/20 px-2 transition-colors">
               <div>
-                <strong className="font-mono text-sm text-navy">{variant.sku}</strong>
-                <p className="mt-1 text-xs text-muted-foreground">{variant.color} · Taille {variant.size}{variant.price ? ` · ${Number(variant.price) / 100} DH` : ""}</p>
+                <strong className="font-mono text-sm font-bold text-navy">{variant.sku}</strong>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">{colorName}</span> · Taille <span className="font-semibold text-foreground">{sizeName}</span> · <span className="font-bold text-navy">{priceValue} DH</span>
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <input defaultValue={variant.stock} type="number" min="0" className="admin-input !w-24 !py-2" onBlur={async (event) => { await request(`/api/admin/variants/${variant.id}`, { method: "PATCH", body: JSON.stringify({ stock: event.target.value, price: variant.price / 100, low_stock_threshold: variant.lowStockThreshold }) }); refresh(); }} aria-label="Modifier le stock" />
-                <span className={`admin-badge ${low ? "!bg-destructive/10 !text-destructive !border-destructive/30" : "!bg-accent-lime/15 !text-navy !border-accent-lime/40"}`}>{low ? "Stock faible" : "Disponible"}</span>
-                <button onClick={() => removeVariant(variant)} className="admin-btn admin-btn-danger !py-2" aria-label={`Supprimer ${variant.sku}`}><Trash2 className="h-3.5 w-3.5" /></button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[11px] font-semibold text-muted-foreground">Stock :</label>
+                  <input
+                    defaultValue={currentStock}
+                    type="number"
+                    min="0"
+                    className="w-20 border border-border bg-background px-2.5 py-1 text-xs font-bold text-center"
+                    onBlur={async (event) => {
+                      const val = Number(event.target.value);
+                      if (val !== currentStock) {
+                        await request(`/api/admin/variants/${variant.id}`, {
+                          method: "PATCH",
+                          body: JSON.stringify({ stock: val, price: priceValue, low_stock_threshold: threshold })
+                        });
+                        refresh();
+                      }
+                    }}
+                    aria-label="Modifier le stock"
+                  />
+                </div>
+                <span className={`px-2.5 py-1 text-[11px] font-bold rounded ${low ? "bg-destructive/10 text-destructive border border-destructive/20" : "bg-accent-lime/20 text-navy border border-accent-lime/40"}`}>
+                  {low ? "Stock faible" : "Disponible"}
+                </span>
+                <button
+                  onClick={() => removeVariant(variant)}
+                  className="border border-border p-1.5 text-destructive hover:bg-destructive/10 transition-colors"
+                  aria-label={`Supprimer ${variant.sku}`}
+                  title="Supprimer la variante"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
           );
         })}
-        {!items.length && <p className="py-10 text-center text-sm text-muted-foreground">Aucune variante.</p>}
+        {!items.length && <p className="py-10 text-center text-sm text-muted-foreground">Aucune variante enregistrée.</p>}
       </div>
     </Panel>
   );

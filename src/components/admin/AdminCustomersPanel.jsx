@@ -35,10 +35,10 @@ export default function AdminCustomersPanel({ data }) {
           <span>Client</span><span>Ville</span><span>Commandes</span><span>Dépensé</span><span />
         </div>
         {data.map((customer) => (
-          <div key={customer.phone} className="grid min-w-[720px] grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.5fr] items-center gap-4 border-b border-black/8 px-4 py-4 last:border-0 hover:bg-black/[0.02]">
+          <div key={customer.phone || customer.name} className="grid min-w-[720px] grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.5fr] items-center gap-4 border-b border-black/8 px-4 py-4 last:border-0 hover:bg-black/[0.02]">
             <div><strong className="text-sm text-navy">{customer.name || "Client invité"}</strong><p className="mt-1 text-xs text-muted-foreground">{customer.phone}</p></div>
-            <span className="text-sm">{customer.city}</span>
-            <span className="text-sm">{customer.orders}</span>
+            <span className="text-sm">{customer.city || "—"}</span>
+            <span className="text-sm">{customer.orders ?? customer.ordersCount ?? 0}</span>
             <strong className="text-sm text-navy">{formatNumber(customer.totalSpent)} DH</strong>
             <button onClick={() => open(customer)} className="justify-self-end rounded-md border border-black/10 p-2 hover:bg-black/5" aria-label={`Voir ${customer.name || customer.phone}`}><Eye className="h-4 w-4" /></button>
           </div>
@@ -48,8 +48,8 @@ export default function AdminCustomersPanel({ data }) {
       <AdminModal open={Boolean(selected)} title={selected?.name || "Client invité"} onClose={() => setSelected(null)}>
         {selected && <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-black/10 p-4"><p className="text-xs text-muted-foreground">Téléphone</p><strong className="text-navy">{selected.phone}</strong></div>
-            <div className="rounded-lg border border-black/10 p-4"><p className="text-xs text-muted-foreground">Commandes</p><strong className="text-navy">{selected.orders}</strong></div>
+            <div className="rounded-lg border border-black/10 p-4"><p className="text-xs text-muted-foreground">Téléphone</p><strong className="text-navy">{selected.phone || "—"}</strong></div>
+            <div className="rounded-lg border border-black/10 p-4"><p className="text-xs text-muted-foreground">Commandes</p><strong className="text-navy">{selected.orders ?? selected.ordersCount ?? 0}</strong></div>
             <div className="rounded-lg border border-black/10 p-4"><p className="text-xs text-muted-foreground">Dépensé</p><strong className="text-navy">{formatNumber(selected.totalSpent)} DH</strong></div>
           </div>
           <div>
