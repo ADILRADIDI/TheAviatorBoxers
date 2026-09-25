@@ -1,0 +1,1 @@
+ALTER TABLE "products" ALTER COLUMN "sizes" SET DEFAULT '["M","L","XL","XXL"]'::jsonb;

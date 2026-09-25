@@ -1,0 +1,401 @@
+const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Image } from "@/components/ui/image";
+import { Banknote, ShieldCheck, MessageCircle, Loader2, Tag } from "lucide-react";
+import { useCart, lineKey } from "@/lib/cart-context";
+import { formatPrice, STORE, computeDiscount, MOROCCAN_CITIES, DEFAULT_SHIPPING, fetchShippingZone, createOrder, validateCoupon } from "@/lib/store";
+
+import { buildWhatsAppMessage, whatsappOrderUrl } from "@/lib/whatsapp";
+import { getTrafficSource } from "@/lib/tracking";
+import { track, Events } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/language";
+import { usePageMeta } from "@/lib/seo";
+
+function validatePhone(phone) {
+  const p = phone.replace(/[\s-]/g, "");
+  return /^(0[6-7]\d{8}|\+212[6-7]\d{8}|212[6-7]\d{8})$/.test(p);
+}
+
+export default function Checkout() {
+  const { items, subtotal, coupon, applyCoupon, removeCoupon, clearCart } = useCart();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  usePageMeta({ title: "Commande — The Aviator", description: "Finalisez votre commande The Aviator. Paiement à la livraison, expédiée sous 24-48h.", noindex: true });
+
+  const [promoCode, setPromoCode] = useState("");
+  const [promoMsg, setPromoMsg] = useState("");
+  const [checkingPromo, setCheckingPromo] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "", phone: "", email: "", city: "", address: "", notes: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey] = useState(() => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const [shippingZone, setShippingZone] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!form.city) {
+      setShippingZone(null);
+      return undefined;
+    }
+    setShippingLoading(true);
+    fetchShippingZone(form.city)
+      .then((zone) => active && setShippingZone(zone))
+      .catch(() => active && setShippingZone(null))
+      .finally(() => active && setShippingLoading(false));
+    return () => { active = false; };
+  }, [form.city]);
+
+  const discountInfo = computeDiscount(coupon, subtotal, 0);
+  const discount = discountInfo.amount;
+  const freeShipping = subtotal - discount >= STORE.freeShippingThreshold || discountInfo.freeShipping;
+  const shippingFee = freeShipping ? 0 : shippingZone?.fee ?? DEFAULT_SHIPPING.fee;
+  const total = subtotal - discount + shippingFee;
+
+  const set = (field) => (e) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    setErrors((er) => ({ ...er, [field]: undefined }));
+  };
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = t("Nom complet requis");
+    if (!form.phone.trim()) e.phone = t("Téléphone requis");
+    else if (!validatePhone(form.phone)) e.phone = t("Numéro marocain invalide (06/07)");
+    if (!form.city) e.city = t("Ville requise");
+    if (!form.address.trim()) e.address = t("Adresse requise");
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleApplyPromo = async (e) => {
+    e?.preventDefault?.();
+    if (!promoCode.trim()) return;
+    setCheckingPromo(true);
+    setPromoMsg("");
+    try {
+      const result = await validateCoupon(promoCode, subtotal, items);
+      if (result.valid) {
+        applyCoupon(result.coupon);
+        setPromoMsg(t("Code promo appliqué !"));
+        setPromoCode("");
+      } else {
+        setPromoMsg(result.message);
+      }
+    } catch {
+      setPromoMsg(t("Erreur de validation. Réessayez."));
+    }
+    setCheckingPromo(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    if (!validate()) {
+      const firstError = document.querySelector("[data-error='true']");
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    setSubmitting(true);
+    track(Events.BEGIN_CHECKOUT, { value: total, currency: "MAD" });
+    try {
+      const orderItems = items.map((i) => ({
+        product_id: i.productId, name: i.name, color: i.color, size: i.size,
+        quantity: i.quantity, price: i.price,
+        packDetails: i.packDetails,
+      }));
+
+      const trafficData = getTrafficSource();
+
+      const orderPayload = {
+        first_name: form.name.trim(),
+        last_name: "",
+        phone: form.phone.trim(),
+        email: form.email.trim() || undefined,
+        city: form.city,
+        address: form.address.trim(),
+        notes: form.notes?.trim() || undefined,
+        items: orderItems,
+        subtotal,
+        shipping_fee: shippingFee,
+        discount,
+        total,
+        payment_method: "cod",
+        coupon_code: coupon?.code || "",
+        status: "nouvelle",
+        source: "checkout",
+        traffic_source: trafficData.source || "DIRECT",
+        utm_source: trafficData.utm_source || "",
+        utm_medium: trafficData.utm_medium || "",
+        utm_campaign: trafficData.utm_campaign || "",
+        utm_term: trafficData.utm_term || "",
+        utm_content: trafficData.utm_content || "",
+        referrer: trafficData.referrer || "",
+        landing_page: trafficData.landing_page || "",
+        idempotency_key: idempotencyKey,
+      };
+      const order = await createOrder(orderPayload);
+
+      track(Events.PURCHASE, { value: total, currency: "MAD", order_id: order.id });
+
+      const orderData = {
+        id: order.id,
+        order_number: order.order_number || order.orderNumber,
+        first_name: form.name,
+        phone: form.phone,
+        email: form.email,
+        city: form.city,
+        address: form.address,
+        notes: form.notes,
+        items: orderItems,
+        subtotal, shipping_fee: shippingFee, discount, total,
+        coupon_code: coupon?.code,
+      };
+
+      clearCart();
+      navigate("/confirmation", { state: { order: orderData } });
+    } catch (err) {
+      setSubmitting(false);
+      setErrors({ form: t("Une erreur est survenue. Veuillez réessayer ou commander via WhatsApp.") });
+    }
+  };
+
+  const handleWhatsAppOrder = () => {
+    const trafficData = getTrafficSource();
+    const message = buildWhatsAppMessage({
+      customer: form,
+      items,
+      subtotal,
+      shippingFee,
+      discount,
+      total,
+      couponCode: coupon?.code,
+      city: form.city,
+      source: trafficData.source || "DIRECT",
+    });
+    window.open(whatsappOrderUrl(message), "_blank");
+  };
+
+  if (items.length === 0) {
+    return (
+      <>
+        <div className="container-edge py-24 text-center">
+          <span className="label-eyebrow flex items-center justify-center gap-2.5 text-ink/40">
+            <span className="h-1 w-1 rounded-full bg-[#C7D400]" />
+            {t("Aucune sélection")}
+          </span>
+          <h1 className="mt-4 font-heading text-4xl">{t("Panier vide")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("Ajoutez des produits avant de passer commande.")}</p>
+          <Link to="/notre-boxer" className="btn-store btn-store--navy btn-sheen mx-auto mt-8">{t("Voir la collection")}</Link>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section className="bg-navy py-12 text-white lg:py-16">
+        <div className="container-edge">
+          <span className="label-eyebrow flex items-center gap-2.5 text-white/45">
+            <span className="h-1 w-1 rounded-full bg-[#C7D400]" />
+            {t("Finaliser")}
+          </span>
+          <h1 className="mt-3 font-heading text-4xl leading-[0.95] tracking-tight sm:text-5xl">{t("Commande")}</h1>
+          <p className="mt-3 text-sm text-white/60">{t("Complétez vos informations pour finaliser la commande.")}</p>
+        </div>
+      </section>
+
+      <form onSubmit={handleSubmit} className="container-edge py-10">
+        <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
+          {/* Form */}
+          <div className="space-y-8">
+            {errors.form && (
+              <div className="border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{errors.form}</div>
+            )}
+
+            {/* Informations essentielles */}
+            <fieldset className="space-y-4">
+              <legend className="flex items-center gap-2.5 font-heading text-xl">
+                  <span className="h-1 w-1 rounded-full bg-[#C7D400]" />
+                  {t("Informations de livraison")}
+                </legend>
+              <Field label={t("Nom complet")} error={errors.name} required>
+                <input value={form.name} onChange={set("name")} className={inputCls(!!errors.name)} placeholder="Ahmed Benani" data-error={!!errors.name} autoComplete="name" />
+              </Field>
+              <Field label={t("Téléphone")} error={errors.phone} required>
+                <input value={form.phone} onChange={set("phone")} type="tel" className={inputCls(!!errors.phone)} placeholder="06 12 34 56 78" data-error={!!errors.phone} autoComplete="tel" />
+              </Field>
+              <Field label={t("Email (optionnel)")} error={errors.email}>
+                <input value={form.email} onChange={set("email")} type="email" className={inputCls(!!errors.email)} placeholder="ahmed@example.com" autoComplete="email" />
+              </Field>
+            </fieldset>
+
+            {/* Livraison */}
+            <fieldset className="space-y-4">
+              <legend className="flex items-center gap-2.5 font-heading text-xl">
+                  <span className="h-1 w-1 rounded-full bg-[#C7D400]" />
+                  {t("Adresse de livraison")}
+                </legend>
+              <Field label={t("Ville")} error={errors.city} required>
+                <select value={form.city} onChange={set("city")} className={inputCls(!!errors.city)} data-error={!!errors.city}>
+                  <option value="">{t("Sélectionnez votre ville")}</option>
+                  {MOROCCAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </Field>
+              <Field label={t("Adresse")} error={errors.address} required>
+                <input value={form.address} onChange={set("address")} className={inputCls(!!errors.address)} placeholder={t("N°, rue, imm.")} data-error={!!errors.address} />
+              </Field>
+              <Field label={t("Instructions pour le livreur (optionnel)")}>
+                <input value={form.notes} onChange={set("notes")} className={inputCls(false)} placeholder={t("Ex: sonner au 2ème étage, appeler avant...")} />
+              </Field>
+            </fieldset>
+
+            <Field label={t("Mode de paiement")} required>
+                <span className="flex cursor-pointer items-center gap-4 border border-navy bg-foreground/[0.03] p-4">
+                  <input type="radio" name="payment" defaultChecked className="accent-[#C7D400]" />
+                  <Banknote className="h-5 w-5 text-ink" strokeWidth={1.5} />
+                  <span className="flex-1">
+                    <p className="text-sm font-bold text-ink">{t("Paiement à la livraison (COD)")}</p>
+                    <p className="text-xs text-muted-foreground">{t("Payez en espèces à la réception")}</p>
+                  </span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#C7D400]" />
+                </span>
+              </Field>
+          </div>
+
+          {/* Summary */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="border border-border bg-background p-6">
+              <h2 className="font-heading text-xl">{t("Ma commande")}</h2>
+              <ul className="store-scroll mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
+                {items.map((item) => {
+                  const key = lineKey(item);
+                  return (
+                    <li key={key} className="flex gap-3">
+                      <div className="relative h-16 w-14 shrink-0 overflow-hidden bg-muted">
+                        {item.image && <Image src={item.image} alt="" fittingType="fill" className="h-full w-full object-cover" />}
+                        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center bg-[#C7D400] px-1 text-[10px] font-bold tabular text-navy">{item.quantity}</span>
+                      </div>
+                      <div className="flex flex-1 flex-col justify-center">
+                        <p className="text-xs font-semibold">{item.name}</p>
+                        {item.packDetails ? (
+                          <p className="text-[11px] text-muted-foreground">
+                            Boxer 1 : {item.packDetails.boxer1?.color} ({item.packDetails.boxer1?.size}) · Boxer 2 : {item.packDetails.boxer2?.color} ({item.packDetails.boxer2?.size})
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{[item.color, item.size].filter(Boolean).join(" · ")}</p>
+                        )}
+                      </div>
+                      <span className="self-center text-xs font-bold tabular">{formatPrice(item.price * item.quantity)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Code promo */}
+              <div className="mt-4 border-t border-border pt-4">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t("Code promo")}
+                </span>
+                {coupon ? (
+                  <div className="flex items-center justify-between border border-[#C7D400]/40 bg-[#C7D400]/10 px-3 py-2 text-xs">
+                    <span className="flex items-center gap-2 font-medium text-navy">
+                      <Tag className="h-3.5 w-3.5 text-navy" /> {coupon.code}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      {t("Retirer")}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleApplyPromo(); } }}
+                      placeholder={t("Votre code")}
+                      className="flex-1 border border-border px-3 py-2 text-xs uppercase focus:border-navy focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPromo}
+                      disabled={checkingPromo}
+                      className="bg-navy px-3.5 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      {checkingPromo ? "..." : t("Appliquer")}
+                    </button>
+                  </div>
+                )}
+                {promoMsg && !coupon && <p className="mt-1.5 text-xs text-destructive">{promoMsg}</p>}
+                {coupon && promoMsg && <p className="mt-1.5 text-xs font-medium text-emerald-600">{promoMsg}</p>}
+              </div>
+
+              <div className="mt-4 space-y-2.5 border-t border-border pt-4">
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("Sous-total")}</span><span className="tabular">{formatPrice(subtotal)}</span></div>
+                {discount > 0 && <div className="flex justify-between text-sm text-[#C7D400]"><span>{t("Réduction")}</span><span className="tabular">-{formatPrice(discount)}</span></div>}
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("Livraison")}</span><span className="tabular">{shippingLoading ? t("Calcul...") : shippingFee === 0 ? t("Gratuite") : formatPrice(shippingFee)}</span></div>
+                <div className="flex items-baseline justify-between border-t border-border pt-3">
+                  <span className="text-sm font-bold uppercase tracking-[0.12em]">{t("Total")}</span>
+                  <span className="font-heading text-2xl tabular text-navy">{formatPrice(total)}</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="btn-store btn-store--navy btn-sheen mt-6 w-full disabled:cursor-not-allowed"
+              >
+                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("Traitement...")}</> : t("Confirmer ma commande")}
+              </button>
+
+              <div className="my-4 flex items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">{t("OU")}</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleWhatsAppOrder}
+                className="flex w-full items-center justify-center gap-2 border border-[#25D366] bg-[#25D366]/5 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-[#1da851] transition-colors hover:bg-[#25D366] hover:text-white"
+              >
+                <MessageCircle className="h-4 w-4" /> {t("Commander via WhatsApp")}
+              </button>
+
+              <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <ShieldCheck className="h-4 w-4" /> {t("Commande 100% sécurisée")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </>
+  );
+}
+
+function inputCls(hasError) {
+  return cn("w-full border-b bg-transparent px-0 pb-2.5 pt-1 text-[15px] focus:outline-none", hasError ? "border-destructive" : "border-foreground/25 focus:border-navy");
+}
+
+function Field({ label, error, required, children }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label} {required && <span className="text-destructive">*</span>}
+      </span>
+      {children}
+      {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
+    </label>
+  );
+}

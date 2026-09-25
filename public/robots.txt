@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /panier
+Disallow: /checkout
+Disallow: /confirmation
+Disallow: /suivi-commande
+Disallow: /api/
+
+Sitemap: https://theaviatorboxer.com/sitemap.xml

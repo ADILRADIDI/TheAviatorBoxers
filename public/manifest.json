@@ -1,0 +1,22 @@
+{
+ "short_name": "Aviator",
+ "name": "THE AVIATOR — Boxers Premium",
+ "icons": [
+  {
+   "src": "/icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "/icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ],
+ "start_url": "/",
+ "background_color": "#0A1F3E",
+ "theme_color": "#0A1F3E",
+ "display": "standalone"
+}
