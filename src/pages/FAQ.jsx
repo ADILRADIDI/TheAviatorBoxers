@@ -28,7 +28,7 @@ const FAQ_ITEMS = [
   {
     icon: Palette,
     q: "Puis-je choisir les couleurs de mon pack ?",
-    a: "Oui. Vous choisissez vous-même les 2 couleurs de votre pack parmi les couleurs disponibles : noir, bleu marine, bleu royal, blanc et gris.",
+    a: "Oui, vous choisissez vous-même les 2 couleurs de votre pack parmi les couleurs disponibles : noir, bleu marine, bleu royal, blanc et gris.",
   },
   {
     icon: Coins,
@@ -103,11 +103,10 @@ export default function FAQ() {
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                        idx === 0
+                      className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${idx === 0
                           ? "bg-[#C7D400]/20 text-[#07132B]"
                           : "bg-gray-100 text-[#0A1128]"
-                      }`}
+                        }`}
                     >
                       <Icon className="h-5 w-5" />
                     </div>

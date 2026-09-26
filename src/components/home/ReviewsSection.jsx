@@ -139,21 +139,22 @@ export default function ReviewsSection() {
         )}
 
         {/* CTA banner */}
-        <div className="mt-8 relative overflow-hidden bg-white border border-black/10 rounded-xs shadow-xs min-h-[300px] sm:min-h-[330px] md:min-h-[350px] flex items-center">
-          {/* Right Image: aligned to right, uncropped, seamless white edge */}
-          <div className="absolute inset-y-0 right-0 w-full sm:w-[62%] md:w-[58%] h-full flex items-center justify-end pointer-events-none select-none">
+        <div className="mt-10 relative overflow-hidden bg-white border border-black/10 rounded-xs shadow-xs min-h-[340px] sm:min-h-[380px] lg:min-h-[400px] flex items-center">
+          {/* Full Background Image: seamless white-to-photo blend with right-top anchor to keep quote intact */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none select-none">
             <img
-              src="/images/review-boxer-white.jpg"
-              alt="The Aviator - Boxer Blanc"
-              className="h-full w-full object-cover sm:object-contain object-right"
+              src="/images/review-cta-banner.jpg"
+              alt="The Aviator - Boxers & Packaging"
+              className="h-full w-full object-cover"
+              style={{ objectPosition: "right 0%" }}
             />
           </div>
 
-          {/* Subtle fade overlay for mobile fallback */}
-          <div className="absolute inset-y-0 left-0 w-full sm:w-1/2 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none sm:hidden" />
+          {/* Subtle mobile overlay for readability on small screens */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none sm:hidden" />
 
           {/* Left content */}
-          <div className="relative z-10 p-6 sm:p-10 lg:p-12 max-w-md sm:max-w-lg font-sans">
+          <div className="relative z-10 p-6 sm:p-10 lg:p-14 max-w-md sm:max-w-lg font-sans">
             <div className="flex items-start gap-3.5 sm:gap-4 mb-4">
               {/* Message icon box with lime sparks */}
               <div className="relative shrink-0 mt-0.5">
