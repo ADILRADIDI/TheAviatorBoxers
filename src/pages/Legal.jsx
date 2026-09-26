@@ -10,7 +10,7 @@ const CGV = [
   { title: "Article 4 — Commande", text: "La commande peut être passée via le site web ou via WhatsApp. Elle est confirmée après validation des informations du client et de la disponibilité des produits." },
   { title: "Article 5 — Paiement", text: "Le paiement s'effectue à la livraison (COD) en espèces, directement au livreur. Le paiement en ligne sera disponible ultérieurement." },
   { title: "Article 6 — Livraison", text: "La livraison s'effectue sous 24 à 48h dans toutes les villes du Maroc. The Aviator ne saurait être tenu responsable des retards dus à des circonstances indépendantes de sa volonté." },
-  { title: "Article 7 — Retours et échanges", text: "Le client dispose de 7 jours pour retourner un produit intact et non porté. Les frais de retour sont à la charge du client, sauf en cas de défaut produit." },
+  { title: "Article 7 — Retours et politique d'hygiène", text: "Pour des raisons d'hygiène et de protection de la santé (sous-vêtements), aucun retour ni échange n'est accepté une fois le colis réceptionné et réglé auprès du livreur. Le client a la possibilité de vérifier son colis lors de la livraison. En cas de défaut de fabrication avéré constaté dès la réception, un remplacement ou remboursement sera pris en charge par The Aviator." },
   { title: "Article 8 — Responsabilité", text: "The Aviator s'efforce de fournir des informations exactes. Cependant, notre responsabilité ne saurait être engagée en cas d'erreurs mineures ou de disponibilité non garantie." },
   { title: "Article 9 — Droit applicable", text: "Les présentes conditions sont régies par le droit marocain. Tout litige sera soumis aux tribunaux compétents du Royaume du Maroc." },
 ];
@@ -32,7 +32,7 @@ export default function Legal({ type = "cgv" }) {
   const eyebrow = t("Legal");
   usePageMeta({
     title: `${isCGV ? "Conditions générales de vente" : "Politique de confidentialité"} — The Aviator`,
-    description: isCGV ? "Conditions générales de vente de The Aviator : commande, prix en MAD, paiement à la livraison, livraison 24-48h et retours sous 7 jours au Maroc." : "Politique de confidentialité de The Aviator : quelles données nous collectons, comment nous les utilisons et vos droits."
+    description: isCGV ? "Conditions générales de vente de The Aviator : commande, prix en MAD, paiement à la livraison, livraison 24-48h et politique d'hygiène au Maroc." : "Politique de confidentialité de The Aviator : quelles données nous collectons, comment nous les utilisons et vos droits."
   });
   useJsonLd(breadcrumbJsonLd([
     { name: "Accueil", url: SITE_URL },

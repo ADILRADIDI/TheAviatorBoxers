@@ -3,15 +3,28 @@ const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me
 // Marketing & analytics helpers (GA4 + Meta Pixel + TikTok Pixel).
 // All functions are env-driven and fail silently — analytics never breaks UX.
 
+const DEFAULT_TRACKERS = {
+  google_analytics_id: "G-NST40JYCB7",
+  google_stream_id: "15844671059",
+};
+
 function getTrackerId(envKey, settingKey) {
   const value = import.meta.env[envKey];
   if (typeof value === "string" && value.length > 0 && !value.includes("XXXXXXXXXX")) {
     return value.trim();
   }
   try {
-    const raw = localStorage.getItem("aviator_mock_db_v1");
-    if (raw) {
-      const parsed = JSON.parse(raw);
+    const siteRaw = localStorage.getItem("aviator_site_settings");
+    if (siteRaw) {
+      const parsed = JSON.parse(siteRaw);
+      const val = parsed?.[settingKey];
+      if (typeof val === "string" && val.length > 0 && !val.includes("XXXXXXXXXX")) {
+        return val.trim();
+      }
+    }
+    const adminRaw = localStorage.getItem("aviator_admin_clean_v4");
+    if (adminRaw) {
+      const parsed = JSON.parse(adminRaw);
       const val = parsed?.settings?.[settingKey];
       if (typeof val === "string" && val.length > 0 && !val.includes("XXXXXXXXXX")) {
         return val.trim();
@@ -20,7 +33,7 @@ function getTrackerId(envKey, settingKey) {
   } catch {
     // Ignore
   }
-  return "";
+  return DEFAULT_TRACKERS[settingKey] || "";
 }
 
 function injectScript(id, src, customSetup) {
@@ -53,6 +66,13 @@ export function initAnalytics() {
         });
       };
     });
+    // In case script was already loaded
+    if (window.gtag) {
+      window.gtag("config", gaId, {
+        send_page_view: true,
+        cookie_flags: "SameSite=None;Secure"
+      });
+    }
   }
 
   if (gtmId) {
@@ -126,3 +146,9 @@ export const Events = {
   LEAD: "lead",
   WHATSAPP_CLICK: "whatsapp_click",
 };
+
+if (typeof window !== "undefined") {
+  window.addEventListener("aviator-settings-updated", () => {
+    initAnalytics();
+  });
+}

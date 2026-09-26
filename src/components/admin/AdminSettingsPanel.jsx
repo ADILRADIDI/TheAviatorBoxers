@@ -16,9 +16,10 @@ const DEFAULTS = {
   facebook: "",
   tiktok: "",
   youtube: "",
-  google_analytics_id: "",
+  google_analytics_id: "G-NST40JYCB7",
+  google_stream_id: "15844671059",
   google_tag_manager_id: "",
-  google_account_email: "",
+  google_account_email: "social@theaviatorboxer.com",
   meta_pixel_id: "",
   tiktok_pixel_id: "",
   trust_items: [],
@@ -108,32 +109,115 @@ export default function AdminSettingsPanel() {
         </div>
       </section>
 
+      <section className="admin-card p-5 sm:p-7 border-l-4 border-l-[#25D366]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span className="text-[10px] font-bold tracking-widest text-white bg-[#25D366] px-2 py-0.5 uppercase rounded-xs">
+              WhatsApp & Conversions
+            </span>
+            <h3 className="admin-h2 mt-2 flex items-center gap-2">
+              Contrôle du Message WhatsApp (Arabe / Français)
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Personnalisez le numéro et le message pré-rempli qui s'ouvre lorsque les clients cliquent sur les boutons WhatsApp du site.
+            </p>
+          </div>
+
+          {/* Test Button */}
+          {form.whatsapp_number && (
+            <a
+              href={`https://wa.me/${form.whatsapp_number.replace(/\D/g, "")}?text=${encodeURIComponent(form.whatsapp_default_message || "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-md bg-[#25D366] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#1EBE5D] transition-colors"
+              title="Tester le lien WhatsApp en direct avec vos paramètres actuels"
+            >
+              <span>🚀 Tester sur WhatsApp</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field
+              label="Numéro WhatsApp Réceptionnaire (Format international sans +)"
+              value={form.whatsapp_number}
+              onChange={set("whatsapp_number")}
+              placeholder="Ex: 212669318641"
+              help="Exemple : 212669318641 (212 suivi du numéro marocain sans le 0)."
+            />
+          </div>
+
+          {/* Quick Presets Buttons (Arabic / French / Darija) */}
+          <div className="sm:col-span-2 rounded-md border border-black/10 bg-black/[0.02] p-3.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+              Modèles rapides (Cliquez pour remplir en 1-clic) :
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, whatsapp_default_message: "Bonjour The Aviator, je souhaite commander un pack / avoir des informations :" }))}
+                className="rounded border border-black/15 bg-white px-2.5 py-1.5 text-xs font-medium text-navy hover:bg-black/5 transition-colors"
+              >
+                🇫🇷 Français classique
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, whatsapp_default_message: "السلام عليكم The Aviator، أرغب في طلب عرض البوكسر أو الاستفسار عن تفاصيل :" }))}
+                className="rounded border border-black/15 bg-white px-2.5 py-1.5 text-xs font-medium text-navy hover:bg-black/5 transition-colors"
+              >
+                🇲🇦 العربية (Standard)
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, whatsapp_default_message: "سلام The Aviator، بغيت نطلب باك ديال البوكسر / نسولكم على القياس :" }))}
+                className="rounded border border-black/15 bg-white px-2.5 py-1.5 text-xs font-medium text-navy hover:bg-black/5 transition-colors"
+              >
+                💬 الدارجة (Darija)
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, whatsapp_default_message: "Bonjour The Aviator / سلام، بغيت نطلب باك ديالي 📦" }))}
+                className="rounded border border-black/15 bg-white px-2.5 py-1.5 text-xs font-medium text-navy hover:bg-black/5 transition-colors"
+              >
+                ⚡ Bilingue Express
+              </button>
+            </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Texte du Message WhatsApp (Français ou Arabe)
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {(form.whatsapp_default_message || "").length} caractères
+                </span>
+              </div>
+              <textarea
+                rows={3}
+                dir="auto"
+                value={form.whatsapp_default_message ?? ""}
+                onChange={set("whatsapp_default_message")}
+                placeholder="Écrivez ici en Français ou en Arabe..."
+                className="admin-input mt-1 resize-y min-h-[70px] text-sm leading-relaxed"
+              />
+              <span className="mt-1.5 block text-[11px] text-muted-foreground">
+                Ce texte apparaîtra automatiquement dans la fenêtre de discussion WhatsApp du client lorsqu'il clique sur n'importe quel bouton WhatsApp du site.
+              </span>
+            </label>
+          </div>
+        </div>
+      </section>
+
       <section className="admin-card p-5 sm:p-7">
         <h3 className="admin-h2">Coordonnées & réseaux sociaux</h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Email" type="email" value={form.email} onChange={set("email")} />
           <Field label="Téléphone" value={form.phone} onChange={set("phone")} />
-          <Field label="Numéro WhatsApp (int. sans +)" value={form.whatsapp_number} onChange={set("whatsapp_number")} placeholder="212669318641" />
           <Field label="Adresse" value={form.address} onChange={set("address")} />
-          
-          <div className="sm:col-span-2">
-            <label className="block">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Message WhatsApp pré-rempli (quand le client clique sur le bouton WhatsApp)
-              </span>
-              <textarea
-                rows={2}
-                value={form.whatsapp_default_message ?? ""}
-                onChange={set("whatsapp_default_message")}
-                placeholder="Ex: Bonjour The Aviator, je souhaite commander un pack / avoir des informations :"
-                className="admin-input mt-1.5 resize-none"
-              />
-              <span className="mt-1 block text-[11px] text-muted-foreground">
-                Ce texte s'écrira automatiquement dans l'application WhatsApp du client dès qu'il clique sur le bouton WhatsApp du site.
-              </span>
-            </label>
-          </div>
-
           <Field label="Instagram (URL)" value={form.instagram} onChange={set("instagram")} />
           <Field label="Facebook (URL)" value={form.facebook} onChange={set("facebook")} />
           <Field label="TikTok (URL)" value={form.tiktok} onChange={set("tiktok")} />
@@ -160,15 +244,22 @@ export default function AdminSettingsPanel() {
             label="ID de mesure Google Analytics 4 (GA4)"
             value={form.google_analytics_id}
             onChange={set("google_analytics_id")}
-            placeholder="Ex: G-XXXXXXXXXX"
+            placeholder="Ex: G-NST40JYCB7"
             help="Créé depuis analytics.google.com avec le compte Gmail du propriétaire."
+          />
+          <Field
+            label="Numéro de flux Web (Stream ID)"
+            value={form.google_stream_id}
+            onChange={set("google_stream_id")}
+            placeholder="Ex: 15844671059"
+            help="Numéro du flux de données Web (ex: 15844671059)."
           />
           <Field
             label="Compte Gmail Propriétaire (Référence GA4 / Search Console)"
             type="email"
             value={form.google_account_email}
             onChange={set("google_account_email")}
-            placeholder="Ex: proprietaire.aviator@gmail.com"
+            placeholder="Ex: social@theaviatorboxer.com"
             help="Adresse Gmail propriétaire du flux de données et des rapports."
           />
           <Field

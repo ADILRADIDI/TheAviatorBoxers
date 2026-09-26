@@ -20,8 +20,16 @@ export default function WhatsAppFloat() {
         setWhatsappUrl(url);
       }
     });
+    const onSettingsUpdated = (e) => {
+      const s = e.detail;
+      const url = whatsappContactUrl(s?.whatsapp_default_message || "", s?.whatsapp_number || "");
+      setWhatsappUrl(url);
+    };
+    window.addEventListener("aviator-settings-updated", onSettingsUpdated);
+
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("aviator-settings-updated", onSettingsUpdated);
       active = false;
     };
   }, []);

@@ -55,7 +55,24 @@ export function buildWhatsAppMessage({ customer, items, subtotal, shippingFee, d
 
 export function getStoredWhatsAppConfig() {
   try {
-    const raw = localStorage.getItem("aviator_admin_mock_db_v4") || localStorage.getItem("aviator_admin_mock_db_v3") || localStorage.getItem("aviator_admin_mock_db_v2");
+    // 1. Check direct site settings cache
+    const siteRaw = localStorage.getItem("aviator_site_settings");
+    if (siteRaw) {
+      const parsed = JSON.parse(siteRaw);
+      if (parsed) {
+        return {
+          number: parsed.whatsapp_number || STORE.whatsappNumber,
+          defaultMessage: parsed.whatsapp_default_message || STORE.whatsappDefaultMessage || "Bonjour The Aviator, je souhaite commander un pack / avoir des informations :",
+        };
+      }
+    }
+
+    // 2. Check admin active database store
+    const raw = localStorage.getItem("aviator_admin_clean_v4") ||
+      localStorage.getItem("aviator_admin_mock_db_v4") ||
+      localStorage.getItem("aviator_admin_mock_db_v3") ||
+      localStorage.getItem("aviator_admin_mock_db_v2");
+
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed?.settings) {

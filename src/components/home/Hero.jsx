@@ -199,9 +199,9 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h1 className="font-heading text-[clamp(1.75rem,2.8vw,3.15rem)] uppercase leading-[0.94] tracking-tight text-white drop-shadow-md">
+              <h1 className="font-serif text-[clamp(1.85rem,3vw,3.35rem)] font-normal uppercase leading-[0.95] tracking-tight text-white drop-shadow-md">
                 <span className="block whitespace-nowrap">PENSÉ DANS</span>
-                <span className="mt-1 block whitespace-nowrap font-heading text-[#C7D400]">
+                <span className="mt-1 block whitespace-nowrap font-serif text-[#C7D400]">
                   CHAQUE DÉTAIL
                 </span>
               </h1>
@@ -223,7 +223,7 @@ export default function Hero() {
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link
                   to="/notre-boxer"
-                  className="group inline-flex items-center gap-3 bg-[#C7D400] px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#071324] shadow-[0_6px_20px_-3px_rgba(204,255,0,0.45)] transition-all duration-300 hover:bg-[#d9ff33] hover:shadow-[0_10px_24px_-3px_rgba(204,255,0,0.6)] hover:scale-[1.02]"
+                  className="group inline-flex items-center gap-3 bg-[#C7D400] px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#071324] shadow-[0_6px_20px_-3px_rgba(199,212,0,0.45)] transition-all duration-300 hover:brightness-95 hover:shadow-[0_10px_24px_-3px_rgba(199,212,0,0.6)] hover:scale-[1.02]"
                 >
                   <span>{t("DÉCOUVRIR NOS DÉTAILS")}</span>
                   <ChevronRight className="h-4 w-4 stroke-[3] transition-transform duration-300 group-hover:translate-x-1" />
@@ -349,9 +349,9 @@ export default function Hero() {
 
         {/* Content Container */}
         <div className="relative z-10 px-6 pt-4 pb-8">
-          <h1 className="font-heading text-3xl sm:text-4xl uppercase leading-[0.95] tracking-tight text-white">
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal uppercase leading-[0.95] tracking-tight text-white">
             PENSÉ DANS
-            <span className="mt-1 block font-heading text-[#C7D400]">
+            <span className="mt-1 block font-serif text-[#C7D400]">
               CHAQUE DÉTAIL
             </span>
           </h1>

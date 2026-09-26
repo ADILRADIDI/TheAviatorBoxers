@@ -81,7 +81,7 @@ export default function WhatsAppCTA() {
             href={whatsappContactUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 bg-[#C7D400] hover:bg-[#6d8d00] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-[#07132B] transition-colors rounded-sm shadow-xs"
+            className="inline-flex items-center gap-2.5 bg-[#C7D400] hover:brightness-95 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-[#07132B] transition-all rounded-sm shadow-xs hover:shadow-md hover:scale-[1.01]"
           >
             <WhatsAppIcon />
             {t("NOUS ÉCRIRE SUR WHATSAPP")}

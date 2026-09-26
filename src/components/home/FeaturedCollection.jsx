@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, ArrowRight, Check, ShieldCheck, Sparkles, Truck, Banknote, Star } from "lucide-react";
 import { Image } from "@/components/ui/image";
@@ -9,8 +10,26 @@ import { useLanguage } from "@/lib/language";
 
 export default function FeaturedCollection() {
   const { data: products, loading, error } = useAsync(() => fetchProducts(), []);
-  const { data: dynamicColors } = useAsync(() => fetchColors(), []);
-  const colorSwatches = Array.isArray(dynamicColors) && dynamicColors.length > 0 ? dynamicColors : FALLBACK_COLORS;
+  const [colors, setColors] = useState(FALLBACK_COLORS);
+
+  useEffect(() => {
+    const update = () => {
+      fetchColors()
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) setColors(res);
+        })
+        .catch(() => {});
+    };
+    update();
+    window.addEventListener("aviator-colors-updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("aviator-colors-updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+
+  const colorSwatches = Array.isArray(colors) && colors.length > 0 ? colors : FALLBACK_COLORS;
   const { t } = useLanguage();
 
   return (
@@ -80,7 +99,7 @@ export default function FeaturedCollection() {
                         {t("Pack de 2 Boxers THE AVIATOR")}
                       </h3>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {t("Composez votre pack sur-mesure parmi 5 coloris intemporels")}
+                        {t(`Composez votre pack sur-mesure parmi ${colorSwatches.length || 5} couleurs disponibles`)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -104,17 +123,23 @@ export default function FeaturedCollection() {
                   </div>
 
                   {/* Color dots preview */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("Coloris")}:</span>
-                    <div className="flex items-center gap-1.5">
-                      {colorSwatches.map((col) => (
-                        <span
-                          key={col.name}
-                          title={col.name}
-                          className="h-4 w-4 rounded-full border border-black/15 shadow-sm"
-                          style={{ backgroundColor: col.hex }}
-                        />
-                      ))}
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("Couleurs")}:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {colorSwatches.map((col) => {
+                        const isBicolor = col.bicolor || Boolean(col.hex2);
+                        return (
+                          <span
+                            key={col.id || col.name}
+                            title={col.displayName || col.name}
+                            className="h-4 w-4 rounded-full border border-black/15 shadow-2xs"
+                            style={isBicolor
+                              ? { background: `linear-gradient(135deg, ${col.hex} 50%, ${col.hex2 || '#FFFFFF'} 50%)` }
+                              : { backgroundColor: col.hex }
+                            }
+                          />
+                        );
+                      })}
                     </div>
                     <span className="text-[11px] text-muted-foreground ml-1">({t("au choix")})</span>
                   </div>
@@ -123,7 +148,7 @@ export default function FeaturedCollection() {
                   <ul className="space-y-2 border-t border-border/60 pt-4 text-xs text-ink/80">
                     <li className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-[#C7D400] shrink-0" strokeWidth={2.5} />
-                      <span>{t("95% Coton peigné premium & 5% Élasthanne stretch")}</span>
+                      <span>{t("95% Coton compact premium & 5% Élasthanne stretch")}</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-[#C7D400] shrink-0" strokeWidth={2.5} />
@@ -281,7 +306,7 @@ export default function FeaturedCollection() {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-navy">{t("Confort Garanti")}</p>
-                <p className="text-[11px] text-muted-foreground">{t("95% Coton peigné / 5% Élasthanne")}</p>
+                <p className="text-[11px] text-muted-foreground">{t("95% Coton compact / 5% Élasthanne")}</p>
               </div>
             </div>
           </div>

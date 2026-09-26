@@ -20,7 +20,7 @@ export default function Contact() {
   usePageMeta({
     title: "Contact — The Aviator",
     description:
-      "Contactez The Aviator : WhatsApp, email et service client du lundi au vendredi de 9h à 18h. Livraison partout au Maroc, paiement à la livraison.",
+      "Contactez The Aviator : WhatsApp, email et service client disponible 24h/24 et 7j/7. Livraison partout au Maroc, paiement à la livraison.",
   });
   useJsonLd(
     breadcrumbJsonLd([
@@ -64,8 +64,8 @@ export default function Contact() {
               </span>
               <p className="text-xs text-gray-500 mb-3">Besoin d'une réponse rapide ?</p>
             </div>
-            <span className="text-xs font-bold text-[#4a6200] hover:text-[#07132B] flex items-center gap-1.5 border-b border-[#C7D400] pb-0.5 self-start">
-              Écrivez-nous <ArrowRight className="h-3.5 w-3.5" />
+            <span className="text-xs font-bold text-[#0A1128] flex items-center gap-1.5 border-b-2 border-[#C7D400] pb-0.5 self-start group-hover:text-[#07132B]">
+              Écrivez-nous <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </span>
           </a>
 
@@ -104,11 +104,11 @@ export default function Contact() {
                 SERVICE CLIENT
               </span>
               <p className="text-xs font-semibold text-[#0A1128] mb-1">
-                Lundi - Vendredi, 9h - 18h
+                24h / 24 · 7j / 7
               </p>
             </div>
             <p className="text-xs text-gray-500">
-              Nous vous répondons dans les meilleurs délais.
+              Disponible 24h/24 et 7j/7 pour vous assister.
             </p>
           </div>
 
@@ -125,7 +125,9 @@ export default function Contact() {
                 LIVRAISON
               </span>
               <p className="text-xs text-gray-600 mb-1">Partout au Maroc</p>
-              <p className="text-xs font-bold text-[#4a6200]">Gratuite à Casablanca</p>
+              <p className="text-xs font-bold text-[#0A1128] flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#C7D400]" /> Gratuite à Casablanca
+              </p>
             </div>
             <p className="text-[11px] text-gray-400 mt-2">
               Paiement à la livraison • 24–48h
@@ -199,10 +201,10 @@ export default function Contact() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-[#0A1128] group-hover:text-[#07132B]">
-                    Retours & échanges
+                    Livraison & politique d'hygiène
                   </h3>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Besoin d'un échange ou d'informations sur un retour ? Contactez notre équipe.
+                    Des questions sur la réception de votre commande ou notre politique ? Contactez notre équipe.
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-[#07132B] group-hover:translate-x-1 transition-all shrink-0" />
@@ -212,61 +214,68 @@ export default function Contact() {
 
           {/* Right Column: Navy Direct Contact Card */}
           <div className="lg:col-span-6">
-            <div className="bg-[#07132B] text-white p-8 sm:p-10 rounded-sm relative overflow-hidden shadow-2xl min-h-[460px] flex flex-col justify-between">
-              {/* Background Boxer Waistband image overlay fading to left */}
-              <div className="absolute right-0 inset-y-0 w-1/2 pointer-events-none overflow-hidden opacity-30 sm:opacity-40">
+            <div className="bg-[#07132B] text-white p-7 sm:p-9 lg:p-10 rounded-sm relative overflow-hidden shadow-2xl min-h-[460px] flex flex-col justify-between">
+              {/* Background Boxer Waistband image overlay fading cleanly */}
+              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-3/5 pointer-events-none overflow-hidden opacity-20 sm:opacity-30 mix-blend-luminosity">
                 <img
                   src="/images/diff-waistband.jpg"
                   alt="The Aviator waistband"
-                  className="h-full w-full object-cover object-left"
+                  className="h-full w-full object-cover object-center filter blur-[0.5px] scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#07132B] via-[#07132B]/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#07132B] via-[#07132B]/85 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#07132B] via-transparent to-[#07132B]/60" />
               </div>
 
-              {/* Cursive handwritten accent on waistband */}
-              <div className="absolute right-4 bottom-14 z-10 pointer-events-none text-right">
-                <span className="font-script text-2xl sm:text-3xl text-white/90 block drop-shadow">
+              {/* Cursive handwritten accent in top-right clear area */}
+              <div className="absolute right-6 sm:right-8 top-6 sm:top-8 z-20 pointer-events-none text-right select-none">
+                <span className="font-script text-xl sm:text-2xl lg:text-3xl text-white/90 block leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                   Toujours
                 </span>
-                <span className="font-script text-2xl sm:text-3xl text-[#C7D400] block drop-shadow">
+                <span className="font-script text-xl sm:text-2xl lg:text-3xl text-[#C7D400] block leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                   à votre écoute !
                 </span>
+                <svg viewBox="0 0 100 12" className="w-16 sm:w-20 h-2 ml-auto text-[#C7D400] mt-1 opacity-80" fill="none">
+                  <path d="M2 9 C30 2, 70 4, 98 8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
               </div>
 
-              <div className="relative z-10">
-                <span className="text-[10px] font-bold tracking-[0.24em] text-white/50 uppercase block">
-                  CONTACTEZ-NOUS DIRECTEMENT
-                </span>
-                <h2 className="font-heading text-3xl sm:text-4xl font-bold mt-2">
+              <div className="relative z-20">
+                <div className="inline-flex flex-col mb-3">
+                  <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-white/60 uppercase block">
+                    CONTACTEZ-NOUS DIRECTEMENT
+                  </span>
+                  <div className="mt-1 h-[2px] w-6 bg-[#C7D400]" />
+                </div>
+                <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">
                   Une question ? <br />
                   <span className="text-[#C7D400]">On vous répond.</span>
                 </h2>
-                <p className="text-sm sm:text-base text-white/70 mt-3 font-light leading-relaxed max-w-md">
+                <p className="text-xs sm:text-sm text-white/75 mt-2.5 font-light leading-relaxed max-w-xs sm:max-w-sm">
                   Notre équipe est là pour vous accompagner dans votre expérience THE AVIATOR.
                 </p>
 
                 {/* Action Buttons */}
-                <div className="mt-8 space-y-3 max-w-md">
+                <div className="mt-7 space-y-3 max-w-sm">
                   <a
                     href={whatsappContactUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-[#C7D400] hover:bg-[#6d8d00] text-[#0A1128] font-bold py-4 px-6 rounded-sm flex items-center justify-center gap-2 transition-all uppercase tracking-wider text-xs shadow-md"
+                    className="w-full bg-[#C7D400] hover:bg-[#b0bd00] text-[#0A1128] font-bold py-3.5 px-5 rounded-sm flex items-center justify-center gap-2 transition-all uppercase tracking-wider text-xs shadow-md group"
                   >
                     <MessageCircle className="h-4 w-4 fill-current" /> NOUS ÉCRIRE SUR WHATSAPP{" "}
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </a>
                   <a
                     href={`mailto:${STORE.email}`}
-                    className="w-full bg-[#050e1f] border border-white/20 hover:border-white/50 text-white font-bold py-4 px-6 rounded-sm flex items-center justify-center gap-2 transition-all uppercase tracking-wider text-xs"
+                    className="w-full bg-[#050e1f]/80 backdrop-blur-sm border border-white/20 hover:border-white/50 text-white font-bold py-3.5 px-5 rounded-sm flex items-center justify-center gap-2 transition-all uppercase tracking-wider text-xs group"
                   >
-                    <Mail className="h-4 w-4" /> NOUS ENVOYER UN E-MAIL <ArrowRight className="h-4 w-4" />
+                    <Mail className="h-4 w-4" /> NOUS ENVOYER UN E-MAIL <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </div>
               </div>
 
               {/* Service Badges */}
-              <div className="relative z-10 mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center gap-3 text-[10px] font-bold tracking-widest text-white/40 uppercase">
+              <div className="relative z-20 mt-8 pt-5 border-t border-white/10 flex flex-wrap items-center gap-2.5 sm:gap-3 text-[10px] font-bold tracking-widest text-white/50 uppercase">
                 <span>TAILLES</span>
                 <span>•</span>
                 <span>COMMANDES</span>

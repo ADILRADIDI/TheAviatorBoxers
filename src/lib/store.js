@@ -86,6 +86,11 @@ export const DEFAULT_SITE_SETTINGS = {
   facebook: "https://web.facebook.com/profile.php?id=61592505372934",
   tiktok: "",
   youtube: "",
+  google_analytics_id: "G-NST40JYCB7",
+  google_stream_id: "15844671059",
+  google_tag_manager_id: "",
+  meta_pixel_id: "",
+  tiktok_pixel_id: "",
   trust_items: [
     { title: "Tissus premium", subtitle: "95% coton / 5% Élasthanne" },
     { title: "Livraison gratuite", subtitle: "Sur Casablanca" },
@@ -109,6 +114,21 @@ export async function fetchSiteSettings() {
       cachedSettings = { ...DEFAULT_SITE_SETTINGS, ...data };
       return cachedSettings;
     } catch {
+      try {
+        const siteRaw = localStorage.getItem("aviator_site_settings");
+        if (siteRaw) {
+          cachedSettings = { ...DEFAULT_SITE_SETTINGS, ...JSON.parse(siteRaw) };
+          return cachedSettings;
+        }
+        const adminRaw = localStorage.getItem("aviator_admin_clean_v4");
+        if (adminRaw) {
+          const parsed = JSON.parse(adminRaw);
+          if (parsed?.settings) {
+            cachedSettings = { ...DEFAULT_SITE_SETTINGS, ...parsed.settings };
+            return cachedSettings;
+          }
+        }
+      } catch {}
       cachedSettings = DEFAULT_SITE_SETTINGS;
       return cachedSettings;
     } finally {
@@ -117,6 +137,12 @@ export async function fetchSiteSettings() {
   })();
 
   return settingsFetchPromise;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("aviator-settings-updated", (event) => {
+    cachedSettings = { ...DEFAULT_SITE_SETTINGS, ...(event.detail || {}) };
+  });
 }
 
 export const DEFAULT_SHIPPING = { fee: 35, delivery_time: "24-48h" };
@@ -144,7 +170,7 @@ export const FALLBACK_PRODUCTS = [
     color_name: "Bleu marine",
     category: "Boxers",
     stock: 100,
-    description: "Pack de 2 Boxers The Aviator. 95% Coton peigné, 5% Élasthanne pour un confort et un maintien inégalés.",
+    description: "Pack de 2 Boxers The Aviator. 95% Coton compact, 5% Élasthanne pour un confort et un maintien inégalés.",
   },
   {
     id: "aviator-pack-4",
@@ -192,7 +218,7 @@ export const FALLBACK_COLORS = [
   { name: "Bleu royal", displayName: "Bleu Altitude", hex: "#1b4d89" },
   { name: "Blanc", displayName: "Blanc Cumulus", hex: "#FFFFFF", border: true },
   { name: "Gris chiné", displayName: "Gris Titanium", hex: "#8e9297" },
-  { name: "Bleu marine / bande blanc", displayName: "Bleu marine / bande blanc", hex: "#07132B", hex2: "#FFFFFF", bicolor: true },
+  { name: "Bleu marine / bande blanche", displayName: "Bleu marine / bande blanche", hex: "#07132B", hex2: "#FFFFFF", bicolor: true },
 ];
 
 export const FALLBACK_REVIEWS = [
@@ -233,9 +259,16 @@ export async function fetchColors() {
     }
   } catch {}
 
-  // Check admin mock storage if offline/standalone
+  // Check cached colors or active admin mock database
   try {
-    const mockStr = localStorage.getItem("aviator_admin_mock_db_v3");
+    const cacheStr = localStorage.getItem("aviator_colors_cache");
+    if (cacheStr) {
+      const parsed = JSON.parse(cacheStr);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter((c) => c.active !== false);
+      }
+    }
+    const mockStr = localStorage.getItem("aviator_admin_clean_v4");
     if (mockStr) {
       const mockDb = JSON.parse(mockStr);
       if (Array.isArray(mockDb.colors) && mockDb.colors.length > 0) {
@@ -245,6 +278,16 @@ export async function fetchColors() {
   } catch {}
 
   return FALLBACK_COLORS;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("aviator-colors-updated", (event) => {
+    if (event.detail && Array.isArray(event.detail)) {
+      try {
+        localStorage.setItem("aviator_colors_cache", JSON.stringify(event.detail));
+      } catch {}
+    }
+  });
 }
 
 export async function fetchReviews(productId) {

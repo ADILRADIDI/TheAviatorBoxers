@@ -8,35 +8,39 @@ import { cn } from "@/lib/utils";
 const FAQS = [
   {
     q: "Quel est le prix du pack ?",
-    a: "Le pack contient <strong>2 boxers à 99 DH.</strong> Vous choisissez vous-même vos couleurs parmi les 5 disponibles.",
+    a: "Le pack signature contient <strong>2 boxers premium à 99 DH.</strong> Vous composez vous-même votre pack en choisissant librement la couleur et la taille de chaque boxer.",
   },
   {
     q: "Puis-je choisir les couleurs de mon pack ?",
-    a: "Oui ! Vous pouvez composer votre pack avec 2 couleurs différentes parmi nos 5 coloris disponibles : Noir, Bleu Marine, Bleu Royal, Blanc, et Gris.",
+    a: "Oui ! Vous pouvez choisir 2 fois la même couleur ou combiner 2 couleurs différentes parmi toutes nos teintes disponibles (Noir, Bleu marine, Bleu royal, Blanc et Gris chiné).",
   },
   {
     q: "Comment choisir ma taille ?",
-    a: "Consultez notre guide des tailles avec les mesures de tour de taille et de hanches. En cas de doute, choisissez la taille supérieure.",
+    a: "Consultez notre guide des tailles avec les mesures de tour de taille et de bassin. Si vous hésitez entre deux tailles, nous vous conseillons de choisir la taille au-dessus pour un confort optimal.",
   },
   {
     q: "Quelle est la composition du boxer ?",
-    a: "Nos boxers sont confectionnés en 95% coton premium et 5% Élasthanne, pour allier douceur, respirabilité et élasticité.",
+    a: "Nos boxers sont confectionnés en <strong>95% coton compact premium et 5% élasthanne</strong>, pour garantir douceur au contact de la peau, respirabilité et liberté de mouvement sans déformation.",
   },
   {
     q: "Quels sont les délais de livraison ?",
-    a: "La livraison s'effectue sous 24 à 48h dans toutes les villes du Maroc. Vous recevrez une confirmation dès l'expédition de votre commande.",
+    a: "La livraison est assurée sous 24h à 48h partout au Maroc. Vous recevrez une confirmation et un appel du livreur avant son passage.",
   },
   {
     q: "La livraison est-elle gratuite ?",
-    a: "La livraison est gratuite sur Casablanca. Pour les autres villes, des frais de livraison s'appliquent et sont calculés à la commande.",
+    a: "La livraison est 100% gratuite sur Casablanca. Pour les autres villes du Royaume, le tarif d'expédition est calculé lors de votre commande.",
   },
   {
     q: "Comment fonctionne le paiement ?",
-    a: "Vous payez en espèces directement au livreur lors de la réception de votre commande. Aucun paiement en ligne n'est requis.",
+    a: "Le paiement s'effectue en espèces directement au livreur à la réception de votre commande. Vous ne payez rien en ligne.",
+  },
+  {
+    q: "Puis-je échanger ou retourner mes boxers après la livraison ?",
+    a: "Pour des raisons d'hygiène et de protection de la santé (sous-vêtements), aucun retour ni échange n'est possible une fois le colis réceptionné et réglé. Vous pouvez vérifier le contenu avec le livreur au moment de la livraison avant le règlement.",
   },
   {
     q: "Comment entretenir mon boxer ?",
-    a: "Lavez à 30°C maximum, à l'envers. Évitez l'assouplissant et le sèche-linge pour préserver la qualité du tissu et l'élasticité de la bande.",
+    a: "Lavez en machine à 30°C maximum, de préférence sur l'envers. Évitez le sèche-linge pour préserver durablement la douceur du coton et l'élasticité de la ceinture.",
   },
 ];
 
@@ -159,13 +163,12 @@ export default function FAQSection() {
           </div>
 
           {/* Right product image */}
-          <div className="relative w-full md:w-80 h-32 md:h-auto self-stretch overflow-hidden bg-gray-50 flex items-center justify-end">
+          <div className="relative w-full md:w-80 h-36 md:h-full self-stretch overflow-hidden bg-gray-50 flex items-center justify-end">
             <img
               src="/Contactwhatsapp.jpeg"
-              alt="The Aviator"
-              className="h-full w-full object-cover object-center"
+              alt="The Aviator Pack"
+              className="h-full w-full object-cover object-[center_28%] scale-115"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/20 to-transparent hidden md:block" />
           </div>
         </div>
       </div>

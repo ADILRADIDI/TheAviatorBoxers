@@ -143,34 +143,276 @@ export function AdminCategoriesPanel({ data, refresh }) {
 export function AdminColorsPanel({ data, refresh }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: "", hex: "", sortOrder: "" });
+  const [form, setForm] = useState({ name: "", displayName: "", hex: "#07132B", hex2: "", isBicolor: false, sortOrder: "" });
   const [error, setError] = useState("");
-  const openCreate = () => { setEditing(null); setForm({ name: "", hex: "", sortOrder: "" }); setError(""); setOpen(true); };
-  const openEdit = (color) => { setEditing(color); setForm({ name: color.name, hex: color.hex || "", sortOrder: color.sortOrder != null ? String(color.sortOrder) : "" }); setError(""); setOpen(true); };
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: "", displayName: "", hex: "#07132B", hex2: "", isBicolor: false, sortOrder: String(data.length + 1) });
+    setError("");
+    setOpen(true);
+  };
+
+  const openEdit = (color) => {
+    setEditing(color);
+    setForm({
+      name: color.name || "",
+      displayName: color.displayName || color.name || "",
+      hex: color.hex || "#07132B",
+      hex2: color.hex2 || "",
+      isBicolor: Boolean(color.bicolor || color.hex2),
+      sortOrder: color.sortOrder != null ? String(color.sortOrder) : ""
+    });
+    setError("");
+    setOpen(true);
+  };
+
   const save = async (event) => {
     event.preventDefault();
     setError("");
     try {
       const targetId = editing?.id || editing?.name;
-      await adminRequest(editing ? `/api/admin/colors/${targetId}` : "/api/admin/colors", { method: editing ? "PATCH" : "POST", body: JSON.stringify({ name: form.name.trim(), hex: form.hex.trim(), sortOrder: Number(form.sortOrder) || 0 }) });
-      setOpen(false); refresh();
-    } catch (requestError) { setError(requestError.message); }
+      const payload = {
+        name: form.name.trim(),
+        displayName: (form.displayName || form.name).trim(),
+        hex: form.hex.trim() || "#07132B",
+        hex2: form.isBicolor && form.hex2 ? form.hex2.trim() : null,
+        bicolor: form.isBicolor && Boolean(form.hex2),
+        sortOrder: Number(form.sortOrder) || 0,
+      };
+      await adminRequest(editing ? `/api/admin/colors/${targetId}` : "/api/admin/colors", {
+        method: editing ? "PATCH" : "POST",
+        body: JSON.stringify(payload)
+      });
+      setOpen(false);
+      refresh();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
+
   const toggle = async (color) => { 
     try { 
       const targetId = color.id || color.name;
-      await adminRequest(`/api/admin/colors/${targetId}`, { method: "PATCH", body: JSON.stringify({ active: color.active === false ? true : false }) }); 
+      await adminRequest(`/api/admin/colors/${targetId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ active: color.active === false ? true : false })
+      }); 
       refresh(); 
-    } catch (requestError) { setError(requestError.message); } 
+    } catch (requestError) {
+      setError(requestError.message);
+    } 
   };
+
   const remove = async (color) => { 
-    if (window.confirm(`Supprimer la couleur ${color.name} ?`)) { 
+    if (window.confirm(`Supprimer la couleur « ${color.name} » ?`)) { 
       try { 
         const targetId = color.id || color.name;
         await adminRequest(`/api/admin/colors/${targetId}`, { method: "DELETE" }); 
         refresh(); 
-      } catch (requestError) { setError(requestError.message); } 
+      } catch (requestError) {
+        setError(requestError.message);
+      } 
     } 
   };
-  return <section className="border border-border bg-background p-5 sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Catalogue</p><h2 className="mt-1 font-heading text-2xl font-bold">Couleurs</h2></div><button onClick={openCreate} className="bg-navy px-4 py-3 text-xs font-bold uppercase text-white">Nouvelle couleur</button></div>{error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}<div className="admin-list-scroll mt-6 divide-y divide-border border-y border-border">{data.map((color) => <div key={color.id ?? color.name} className="flex items-center justify-between gap-3 py-4"><div className="flex items-center gap-3"><span className="h-6 w-6 shrink-0 rounded-full border border-border" style={{ backgroundColor: color.hex || "transparent" }} aria-hidden="true" /><div><strong>{color.name}</strong><p className="text-xs text-muted-foreground">{color.hex || "Non défini"}{color.sortOrder ? ` · ordre ${color.sortOrder}` : ""}</p></div></div><div className="flex items-center gap-2"><button type="button" onClick={() => toggle(color)} className={`px-2.5 py-1 text-xs font-bold rounded transition-colors ${color.active !== false ? "bg-accent-lime text-navy hover:bg-[#6d8d00]" : "bg-muted text-muted-foreground hover:bg-muted/80"}`} title={color.active !== false ? "Cliquer pour désactiver" : "Cliquer pour activer"}>{color.active !== false ? "Active" : "Inactive"}</button><button type="button" onClick={() => openEdit(color)} className="border border-border p-2 text-navy hover:bg-muted" aria-label={`Modifier ${color.name}`}><Edit3 className="h-4 w-4" /></button><button type="button" onClick={() => remove(color)} className="border border-border p-2 text-destructive hover:bg-destructive/10" aria-label={`Supprimer ${color.name}`}><Trash2 className="h-4 w-4" /></button></div></div>)}{!data.length && <p className="py-10 text-center text-sm text-muted-foreground">Aucune couleur.</p>}</div><AdminModal open={open} title={editing ? "Modifier la couleur" : "Créer une couleur"} onClose={() => setOpen(false)}><form onSubmit={save} className="space-y-4"><input required placeholder="Nom" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="w-full border border-border px-4 py-3 text-sm" /><div className="flex items-center gap-3"><input type="color" value={form.hex || "#C7D400"} onChange={(event) => setForm({ ...form, hex: event.target.value })} className="h-9 w-14 shrink-0 cursor-pointer border border-border bg-transparent p-1" aria-label="Code hexadécimal" /><input placeholder="Hex (#C7D400)" value={form.hex} onChange={(event) => setForm({ ...form, hex: event.target.value })} className="w-full border border-border px-4 py-3 text-sm" /></div><input placeholder="Ordre d'affichage" type="number" value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} className="w-full border border-border px-4 py-3 text-sm" />{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-3"><button type="button" onClick={() => setOpen(false)} className="border border-border px-4 py-3 text-xs font-bold uppercase">Annuler</button><button type="submit" className="bg-navy px-4 py-3 text-xs font-bold uppercase text-white">{editing ? "Enregistrer" : "Créer"}</button></div></form></AdminModal></section>;
+
+  return (
+    <section className="border border-border bg-background p-5 sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Catalogue & Personnalisation</p>
+          <h2 className="mt-1 font-heading text-2xl font-bold">Couleurs & Coloris ({data.length})</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Synchronisé en temps réel à 100% avec l'expérience client.</p>
+        </div>
+        <button onClick={openCreate} className="bg-navy hover:bg-navy/90 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors">
+          + Nouvelle couleur
+        </button>
+      </div>
+
+      {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
+
+      <div className="admin-list-scroll mt-6 divide-y divide-border border-y border-border">
+        {data.map((color) => {
+          const isBicolor = color.bicolor || Boolean(color.hex2);
+          return (
+            <div key={color.id ?? color.name} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <span
+                  className="h-7 w-7 shrink-0 rounded-full border border-black/15 shadow-2xs"
+                  style={isBicolor
+                    ? { background: `linear-gradient(135deg, ${color.hex || '#07132B'} 50%, ${color.hex2 || '#FFFFFF'} 50%)` }
+                    : { backgroundColor: color.hex || "transparent" }
+                  }
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <strong className="text-sm font-semibold text-navy break-words">{color.name}</strong>
+                    {isBicolor && (
+                      <span className="text-[10px] font-bold bg-muted text-navy px-1.5 py-0.5 rounded">Bicolore</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-mono text-[11px]">{color.hex || "Non défini"}</span>
+                    {color.hex2 ? <span className="font-mono text-[11px]"> / {color.hex2}</span> : ""}
+                    {color.sortOrder ? ` · ordre ${color.sortOrder}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggle(color)}
+                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                    color.active !== false
+                      ? "bg-accent-lime text-navy hover:bg-[#6d8d00]"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                  title={color.active !== false ? "Cliquer pour désactiver" : "Cliquer pour activer"}
+                >
+                  {color.active !== false ? "Active" : "Inactive"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEdit(color)}
+                  className="border border-border p-2 text-navy hover:bg-muted transition-colors rounded"
+                  aria-label={`Modifier ${color.name}`}
+                >
+                  <Edit3 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(color)}
+                  className="border border-border p-2 text-destructive hover:bg-destructive/10 transition-colors rounded"
+                  aria-label={`Supprimer ${color.name}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {!data.length && <p className="py-10 text-center text-sm text-muted-foreground">Aucune couleur enregistrée.</p>}
+      </div>
+
+      <AdminModal open={open} title={editing ? "Modifier la couleur" : "Créer une nouvelle couleur"} onClose={() => setOpen(false)}>
+        <form onSubmit={save} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Nom de la couleur (ex: Bleu marine, Gris chiné, Blanc)
+            </label>
+            <input
+              required
+              placeholder="Ex: Bleu marine"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              className="w-full border border-border px-4 py-2.5 text-sm rounded-xs focus:border-navy focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Couleur principale (Hex)
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={form.hex || "#07132B"}
+                onChange={(event) => setForm({ ...form, hex: event.target.value })}
+                className="h-10 w-14 shrink-0 cursor-pointer border border-border rounded-xs bg-transparent p-1"
+                aria-label="Code hexadécimal couleur principale"
+              />
+              <input
+                placeholder="Hex (#07132B)"
+                value={form.hex}
+                onChange={(event) => setForm({ ...form, hex: event.target.value })}
+                className="w-full border border-border px-4 py-2.5 text-sm rounded-xs focus:border-navy focus:outline-none font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="pt-1">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-navy">
+              <input
+                type="checkbox"
+                checked={form.isBicolor}
+                onChange={(e) => setForm({ ...form, isBicolor: e.target.checked })}
+                className="rounded border-border text-navy focus:ring-navy h-4 w-4"
+              />
+              <span>Couleur bicolore / liseré contrasté</span>
+            </label>
+          </div>
+
+          {form.isBicolor && (
+            <div className="p-3 bg-muted/40 border border-border rounded space-y-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Couleur secondaire / Liseré (Hex)
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={form.hex2 || "#FFFFFF"}
+                  onChange={(event) => setForm({ ...form, hex2: event.target.value })}
+                  className="h-10 w-14 shrink-0 cursor-pointer border border-border rounded-xs bg-transparent p-1"
+                  aria-label="Code hexadécimal secondaire"
+                />
+                <input
+                  placeholder="Hex secondaire (#FFFFFF)"
+                  value={form.hex2}
+                  onChange={(event) => setForm({ ...form, hex2: event.target.value })}
+                  className="w-full border border-border px-4 py-2.5 text-sm rounded-xs focus:border-navy focus:outline-none font-mono"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Ordre d'affichage
+            </label>
+            <input
+              placeholder="1, 2, 3..."
+              type="number"
+              value={form.sortOrder}
+              onChange={(event) => setForm({ ...form, sortOrder: event.target.value })}
+              className="w-full border border-border px-4 py-2.5 text-sm rounded-xs focus:border-navy focus:outline-none"
+            />
+          </div>
+
+          {/* Live Preview */}
+          <div className="p-3.5 bg-background border border-border rounded flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-medium">Aperçu direct du badge :</span>
+            <div className="flex items-center gap-2">
+              <span
+                className="h-6 w-6 rounded-full border border-black/15 shadow-2xs"
+                style={form.isBicolor && form.hex2
+                  ? { background: `linear-gradient(135deg, ${form.hex || '#07132B'} 50%, ${form.hex2} 50%)` }
+                  : { backgroundColor: form.hex || "#07132B" }
+                }
+              />
+              <span className="text-xs font-bold text-navy">{form.name || "Nom de la couleur"}</span>
+            </div>
+          </div>
+
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="border border-border px-4 py-2.5 text-xs font-bold uppercase hover:bg-muted"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="bg-navy px-5 py-2.5 text-xs font-bold uppercase text-white hover:bg-navy/90"
+            >
+              {editing ? "Enregistrer" : "Créer"}
+            </button>
+          </div>
+        </form>
+      </AdminModal>
+    </section>
+  );
 }

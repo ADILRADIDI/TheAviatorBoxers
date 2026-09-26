@@ -7,8 +7,26 @@ import { useAsync } from "@/lib/useAsync";
 
 export default function PackBuilderSection() {
   const { t } = useLanguage();
-  const { data: dynamicColors } = useAsync(() => fetchColors(), []);
-  const allColors = dynamicColors && dynamicColors.length > 0 ? dynamicColors : FALLBACK_COLORS;
+  const [colors, setColors] = useState(FALLBACK_COLORS);
+
+  useEffect(() => {
+    const update = () => {
+      fetchColors()
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) setColors(res);
+        })
+        .catch(() => {});
+    };
+    update();
+    window.addEventListener("aviator-colors-updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("aviator-colors-updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+
+  const allColors = colors && colors.length > 0 ? colors : FALLBACK_COLORS;
 
   const [selectedColor, setSelectedColor] = useState(allColors[0]?.name || "Noir");
   const [selectedSize, setSelectedSize] = useState("L");
@@ -31,7 +49,7 @@ export default function PackBuilderSection() {
             </span>
             <h2 className="mt-2 font-serif text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-[#07132B]">
               Composez votre{" "}
-              <span className="font-serif text-[#9DC92A] relative inline-block">
+              <span className="font-serif text-[#C7D400] relative inline-block">
                 pack
               </span>
             </h2>
@@ -76,7 +94,7 @@ export default function PackBuilderSection() {
             {/* Top CTA Button */}
             <Link
               to="/notre-boxer"
-              className="ml-auto lg:ml-2 inline-flex items-center gap-2 bg-[#C7D400] hover:bg-[#6d8d00] text-[#07132B] px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow font-sans"
+              className="ml-auto lg:ml-2 inline-flex items-center gap-2 bg-[#C7D400] hover:brightness-95 text-[#07132B] px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow-md hover:scale-[1.01] font-sans"
             >
               <span>{t("COMPOSER MON PACK")}</span>
               <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -111,16 +129,17 @@ export default function PackBuilderSection() {
 
             {/* Color Swatches Grid */}
             <div className="pt-2">
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
                 {allColors.map((col) => {
                   const isSelected = selectedColor === col.name;
+                  const isBicolor = col.bicolor || Boolean(col.hex2);
                   return (
                     <button
-                      key={col.name}
+                      key={col.id || col.name}
                       type="button"
                       onClick={() => setSelectedColor(col.name)}
-                      className={`flex flex-col items-center gap-1 transition-all ${
-                        isSelected ? "scale-105" : "opacity-75 hover:opacity-100"
+                      className={`flex flex-col items-center gap-1.5 p-1 rounded transition-all min-w-[56px] max-w-[86px] ${
+                        isSelected ? "scale-105" : "opacity-80 hover:opacity-100"
                       }`}
                       title={col.name}
                     >
@@ -130,7 +149,10 @@ export default function PackBuilderSection() {
                             ? "ring-2 ring-offset-2 ring-[#07132B] shadow-sm"
                             : "border border-black/20"
                         }`}
-                        style={{ backgroundColor: col.hex }}
+                        style={isBicolor
+                          ? { background: `linear-gradient(135deg, ${col.hex} 50%, ${col.hex2 || '#FFFFFF'} 50%)` }
+                          : { backgroundColor: col.hex }
+                        }
                       >
                         {isSelected && (
                           <Check
@@ -143,8 +165,8 @@ export default function PackBuilderSection() {
                           />
                         )}
                       </span>
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#07132B] max-w-[54px] truncate font-sans">
-                        {t(col.name)}
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#07132B] text-center leading-tight break-words font-sans w-full">
+                        {t(col.displayName || col.name)}
                       </span>
                     </button>
                   );
@@ -282,7 +304,7 @@ export default function PackBuilderSection() {
           {/* Bottom Button */}
           <Link
             to="/notre-boxer"
-            className="inline-flex items-center justify-center gap-2 bg-[#C7D400] hover:bg-[#6d8d00] text-[#07132B] px-6 py-3.5 text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow shrink-0 font-sans"
+            className="inline-flex items-center justify-center gap-2 bg-[#C7D400] hover:brightness-95 text-[#07132B] px-6 py-3.5 text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow-md hover:scale-[1.01] shrink-0 font-sans"
           >
             <span>{t("COMPOSER MON PACK")}</span>
             <ArrowRight className="h-4 w-4 stroke-[2.5]" />

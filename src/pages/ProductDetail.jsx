@@ -37,6 +37,7 @@ const COLOR_IMAGE_MAP = {
   "Blanc": 2,
   "Bleu royal": 3,
   "Gris chiné": 4,
+  "Bleu marine / bande blanche": 0,
   "Bleu marine / bande blanc": 0,
 };
 
@@ -69,15 +70,25 @@ export default function ProductDetail() {
       })
       .catch(() => {});
 
-    fetchColors()
-      .then((colors) => {
-        if (Array.isArray(colors) && colors.length > 0) {
-          setColorsList(colors);
-          setBoxer1Color((prev) => (colors.some((c) => c.name === prev) ? prev : colors[0].name));
-          setBoxer2Color((prev) => (colors.some((c) => c.name === prev) ? prev : (colors[1]?.name || colors[0].name)));
-        }
-      })
-      .catch(() => {});
+    const refreshColors = () => {
+      fetchColors()
+        .then((colors) => {
+          if (Array.isArray(colors) && colors.length > 0) {
+            setColorsList(colors);
+            setBoxer1Color((prev) => (colors.some((c) => c.name === prev) ? prev : colors[0].name));
+            setBoxer2Color((prev) => (colors.some((c) => c.name === prev) ? prev : (colors[1]?.name || colors[0].name)));
+          }
+        })
+        .catch(() => {});
+    };
+
+    refreshColors();
+    window.addEventListener("aviator-colors-updated", refreshColors);
+    window.addEventListener("storage", refreshColors);
+    return () => {
+      window.removeEventListener("aviator-colors-updated", refreshColors);
+      window.removeEventListener("storage", refreshColors);
+    };
   }, []);
 
   const sizes = (liveProduct?.sizes && liveProduct.sizes.length > 0) ? liveProduct.sizes : DEFAULT_SIZES;
@@ -340,53 +351,93 @@ export default function ProductDetail() {
 
             {/* 2. CHOISISSEZ VOS 2 COULEURS */}
             <div className="mt-7 font-sans">
-              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#07132B] block mb-3 font-sans">
-                2. CHOISISSEZ VOS 2 COULEURS
-              </span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#07132B] font-sans">
+                  2. CHOISISSEZ VOS 2 COULEURS
+                </span>
+                <span className="text-[11px] font-medium text-gray-500 font-sans truncate max-w-[200px]">
+                  {boxer1Color} + {boxer2Color}
+                </span>
+              </div>
 
               {/* Swatches reference visual row */}
-              <div className="flex items-center justify-between gap-2 mb-4 px-2">
-                {colorsList.map((c) => (
-                  <div key={c.name} className="flex flex-col items-center">
-                    <div
-                      className={`w-7 h-7 rounded-full mb-1 shadow-inner ${
-                        c.border || c.hex?.toUpperCase() === "#FFFFFF" ? "border border-gray-300" : ""
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4 p-2.5 rounded-sm bg-[#FAF9F5] border border-gray-200/80">
+                {colorsList.map((c) => {
+                  const is1 = boxer1Color === c.name;
+                  const is2 = boxer2Color === c.name;
+                  const isBicolor = c.bicolor || Boolean(c.hex2);
+                  return (
+                    <button
+                      key={c.id || c.name}
+                      type="button"
+                      onClick={() => {
+                        if (!is1 && !is2) {
+                          handleColor1Select(c.name);
+                        } else if (is1 && !is2) {
+                          handleColor2Select(c.name);
+                        } else {
+                          handleColor1Select(c.name);
+                        }
+                      }}
+                      className={`flex flex-col items-center justify-between p-2 rounded transition-all group ${
+                        is1 || is2 ? "bg-white shadow-xs ring-1 ring-[#07132B]" : "hover:bg-white/80"
                       }`}
-                      style={c.bicolor
-                        ? { background: `linear-gradient(to right, ${c.hex} 50%, ${c.hex2} 50%)`, border: '1px solid #d1d5db' }
-                        : { backgroundColor: c.hex }
-                      }
-                    />
-                    <span className="text-[10px] text-gray-500 font-sans font-medium text-center leading-tight max-w-[60px]">{c.displayName || c.name}</span>
-                  </div>
-                ))}
+                      title={c.name}
+                    >
+                      <div className="relative mb-1.5">
+                        <div
+                          className={`w-7 h-7 rounded-full shadow-inner transition-transform group-hover:scale-105 ${
+                            c.border || c.hex?.toUpperCase() === "#FFFFFF" ? "border border-gray-300" : "border border-black/10"
+                          }`}
+                          style={isBicolor
+                            ? { background: `linear-gradient(135deg, ${c.hex} 50%, ${c.hex2 || '#FFFFFF'} 50%)` }
+                            : { backgroundColor: c.hex }
+                          }
+                        />
+                        {(is1 || is2) && (
+                          <span className="absolute -bottom-1 -right-1 bg-[#07132B] text-[#C7D400] text-[8px] font-bold px-1 rounded-full border border-white leading-none py-0.5 shadow-2xs">
+                            {is1 && is2 ? "1+2" : is1 ? "1" : "2"}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-sans font-medium text-center leading-tight text-[#07132B] break-words w-full px-0.5">
+                        {c.displayName || c.name}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Dual Boxer Selectors */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 font-sans">
                 {/* Boxer 1 Selector */}
                 <div className="border border-gray-200 p-3.5 rounded-sm bg-[#FAF9F5]">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1.5 font-sans">
-                    BOXER 1
-                  </span>
-                  <div className="flex items-center justify-between bg-white border border-gray-200 px-3 py-2 rounded-sm relative">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 font-sans">
+                      BOXER 1
+                    </span>
+                    <span className="text-[10px] font-semibold text-[#07132B] truncate max-w-[130px] font-sans">
+                      {boxer1Color}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white border border-gray-200 px-3 py-2 rounded-sm relative shadow-2xs">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
-                        className={`w-4 h-4 rounded-full ${
-                          boxer1ColorObj.border || boxer1ColorObj.hex?.toUpperCase() === "#FFFFFF" ? "border border-gray-300" : ""
+                        className={`w-4 h-4 rounded-full shrink-0 ${
+                          boxer1ColorObj.border || boxer1ColorObj.hex?.toUpperCase() === "#FFFFFF" ? "border border-gray-300" : "border border-black/10"
                         }`}
-                        style={boxer1ColorObj.bicolor
-                          ? { background: `linear-gradient(to right, ${boxer1ColorObj.hex} 50%, ${boxer1ColorObj.hex2} 50%)`, border: '1px solid #d1d5db' }
+                        style={boxer1ColorObj.bicolor || boxer1ColorObj.hex2
+                          ? { background: `linear-gradient(135deg, ${boxer1ColorObj.hex} 50%, ${boxer1ColorObj.hex2 || '#FFFFFF'} 50%)` }
                           : { backgroundColor: boxer1ColorObj.hex }
                         }
                       />
                       <select
                         value={boxer1Color}
                         onChange={(e) => handleColor1Select(e.target.value)}
-                        className="text-xs font-medium text-[#07132B] bg-transparent focus:outline-none cursor-pointer pr-4 font-sans"
+                        className="w-full text-xs font-semibold text-[#07132B] bg-transparent focus:outline-none cursor-pointer pr-4 font-sans truncate"
                       >
                         {colorsList.map((c) => (
-                          <option key={c.name} value={c.name}>
+                          <option key={c.id || c.name} value={c.name}>
                             {c.displayName || c.name}
                           </option>
                         ))}
@@ -394,7 +445,7 @@ export default function ProductDetail() {
                     </div>
                   </div>
                   {/* Individual size selector */}
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500 font-sans">
+                  <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-500 font-sans">
                     <span>Taille :</span>
                     <div className="flex gap-1">
                       {sizes.map((s) => (
@@ -402,10 +453,10 @@ export default function ProductDetail() {
                           key={s}
                           type="button"
                           onClick={() => setBoxer1Size(s)}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-sans ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold font-sans transition-colors ${
                             boxer1Size === s
-                              ? "bg-[#07132B] text-white"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              ? "bg-[#07132B] text-white shadow-2xs"
+                              : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
                           }`}
                         >
                           {s}
@@ -417,27 +468,32 @@ export default function ProductDetail() {
 
                 {/* Boxer 2 Selector */}
                 <div className="border border-gray-200 p-3.5 rounded-sm bg-[#FAF9F5]">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1.5 font-sans">
-                    BOXER 2
-                  </span>
-                  <div className="flex items-center justify-between bg-white border border-gray-200 px-3 py-2 rounded-sm relative">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 font-sans">
+                      BOXER 2
+                    </span>
+                    <span className="text-[10px] font-semibold text-[#07132B] truncate max-w-[130px] font-sans">
+                      {boxer2Color}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white border border-gray-200 px-3 py-2 rounded-sm relative shadow-2xs">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
-                        className={`w-4 h-4 rounded-full ${
-                          boxer2ColorObj.border || boxer2ColorObj.hex?.toUpperCase() === "#FFFFFF" ? "border border-gray-300" : ""
+                        className={`w-4 h-4 rounded-full shrink-0 ${
+                          boxer2ColorObj.border || boxer2ColorObj.hex?.toUpperCase() === "#FFFFFF" ? "border border-gray-300" : "border border-black/10"
                         }`}
-                        style={boxer2ColorObj.bicolor
-                          ? { background: `linear-gradient(to right, ${boxer2ColorObj.hex} 50%, ${boxer2ColorObj.hex2} 50%)`, border: '1px solid #d1d5db' }
+                        style={boxer2ColorObj.bicolor || boxer2ColorObj.hex2
+                          ? { background: `linear-gradient(135deg, ${boxer2ColorObj.hex} 50%, ${boxer2ColorObj.hex2 || '#FFFFFF'} 50%)` }
                           : { backgroundColor: boxer2ColorObj.hex }
                         }
                       />
                       <select
                         value={boxer2Color}
                         onChange={(e) => handleColor2Select(e.target.value)}
-                        className="text-xs font-medium text-[#07132B] bg-transparent focus:outline-none cursor-pointer pr-4 font-sans"
+                        className="w-full text-xs font-semibold text-[#07132B] bg-transparent focus:outline-none cursor-pointer pr-4 font-sans truncate"
                       >
                         {colorsList.map((c) => (
-                          <option key={c.name} value={c.name}>
+                          <option key={c.id || c.name} value={c.name}>
                             {c.displayName || c.name}
                           </option>
                         ))}
@@ -445,7 +501,7 @@ export default function ProductDetail() {
                     </div>
                   </div>
                   {/* Individual size selector */}
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500 font-sans">
+                  <div className="mt-2.5 flex items-center justify-between text-[11px] text-gray-500 font-sans">
                     <span>Taille :</span>
                     <div className="flex gap-1">
                       {sizes.map((s) => (
@@ -453,10 +509,10 @@ export default function ProductDetail() {
                           key={s}
                           type="button"
                           onClick={() => setBoxer2Size(s)}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-sans ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold font-sans transition-colors ${
                             boxer2Size === s
-                              ? "bg-[#07132B] text-white"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              ? "bg-[#07132B] text-white shadow-2xs"
+                              : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
                           }`}
                         >
                           {s}
@@ -482,7 +538,7 @@ export default function ProductDetail() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="w-full bg-[#C7D400] hover:bg-[#6d8d00] text-[#07132B] font-bold py-4 px-6 rounded-sm flex items-center justify-center gap-2 transition-colors uppercase tracking-wider text-xs font-sans shadow-xs"
+                className="w-full bg-[#C7D400] hover:brightness-95 text-[#07132B] font-bold py-4 px-6 rounded-sm flex items-center justify-center gap-2 transition-all uppercase tracking-wider text-xs font-sans shadow-xs hover:shadow-md hover:scale-[1.01]"
               >
                 <ShoppingBag className="h-4 w-4" /> AJOUTER AU PANIER
               </button>

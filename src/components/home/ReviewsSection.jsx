@@ -63,7 +63,7 @@ export default function ReviewsSection() {
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-[#07132B] leading-tight">
               {t("Le confort, c'est vous qui")}{" "}
               <em className="not-italic font-serif italic text-[#C7D400]">
-                {t("en parlez.")}
+                {t("en parlez !")}
               </em>
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-[#07132B]/70 font-sans">

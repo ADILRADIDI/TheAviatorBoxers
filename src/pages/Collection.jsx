@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Image } from "@/components/ui/image";
-import { ShoppingBag, MessageCircle, Check, Truck, RefreshCw } from "lucide-react";
+import { ShoppingBag, MessageCircle, Check, Truck, ShieldCheck } from "lucide-react";
 import StarRating from "@/components/storefront/StarRating";
 import PackBuilder from "@/components/storefront/PackBuilder";
 import { useAsync } from "@/lib/useAsync";
@@ -20,7 +20,25 @@ const LIME = "#C7D400";
 
 export default function Collection() {
   const { data: product, loading, error } = useAsync(() => fetchProductBySlug(FLAGSHIP_SLUG), []);
-  const { data: swatchColors } = useAsync(() => fetchColors(), []);
+  const [swatchColors, setSwatchColors] = useState(FALLBACK_COLORS);
+
+  useEffect(() => {
+    const update = () => {
+      fetchColors()
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) setSwatchColors(res);
+        })
+        .catch(() => {});
+    };
+    update();
+    window.addEventListener("aviator-colors-updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("aviator-colors-updated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+
   const { addItem } = useCart();
   const { t } = useLanguage();
 
@@ -100,8 +118,8 @@ export default function Collection() {
   const tabContent = tab === 0
     ? product.description || t("Conçu pour offrir une aisance irréprochable au quotidien, ce boxer The Aviator allie maintien optimal, douceur durable et finitions de précision adaptées au climat marocain.")
     : tab === 1
-      ? t("95% Coton peigné haute qualité, 5% Élasthanne. Lavage en machine à 30°C. Ne pas javelliser. Séchage à l'air libre conseillé.")
-      : t("Livraison rapide partout au Maroc en 24 à 48 heures. Paiement en espèces à la livraison. Possibilité d'échange de taille sous 7 jours.");
+      ? t("95% Coton compact haute qualité, 5% Élasthanne. Lavage en machine à 30°C. Ne pas javelliser. Séchage à l'air libre conseillé.")
+      : t("Livraison rapide partout au Maroc en 24 à 48 heures. Paiement en espèces à la livraison. Vérification possible auprès du livreur à la réception.");
 
   const addToCart = () => {
     if (qty > 1) {
@@ -224,9 +242,12 @@ export default function Collection() {
                     >
                       <span
                         className="h-7 w-7 rounded-full"
-                        style={c.hex ? { backgroundColor: c.hex } : undefined}
+                        style={c.bicolor || c.hex2
+                          ? { background: `linear-gradient(135deg, ${c.hex} 50%, ${c.hex2 || '#FFFFFF'} 50%)` }
+                          : c.hex ? { backgroundColor: c.hex } : undefined
+                        }
                       >
-                        {!c.hex && <span className="block h-7 w-7 rounded-full bg-foreground/10" />}
+                        {!c.hex && !c.hex2 && <span className="block h-7 w-7 rounded-full bg-foreground/10" />}
                       </span>
                       {active && <Check className="absolute h-4 w-4 text-navy drop-shadow" aria-hidden="true" />}
                     </button>
@@ -326,7 +347,7 @@ export default function Collection() {
               {[
                 [Truck, t("Livraison gratuite sur Casablanca")],
                 [Check, t("Qualité premium")],
-                [RefreshCw, t("Retours faciles")],
+                [ShieldCheck, t("Paiement à la livraison")],
               ].map(([Icon, label]) => (
                 <span key={label} className="flex flex-col items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   <span className="flex h-9 w-9 items-center justify-center bg-foreground/[0.04]">

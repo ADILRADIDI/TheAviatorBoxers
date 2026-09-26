@@ -28,12 +28,12 @@ const FAQ_ITEMS = [
   {
     icon: Palette,
     q: "Puis-je choisir les couleurs de mon pack ?",
-    a: "Oui, vous choisissez vous-même les 2 couleurs de votre pack parmi les couleurs disponibles : noir, bleu marine, bleu royal, blanc et gris.",
+    a: "Oui, vous êtes totalement libre de choisir les couleurs de votre pack : 2 boxers de la même couleur ou 2 couleurs différentes parmi toutes nos teintes disponibles (Noir, Bleu marine, Bleu royal, Blanc et Gris chiné). Vous pouvez également choisir une taille différente pour chaque boxer.",
   },
   {
     icon: Coins,
     q: "Quel est le prix du pack ?",
-    a: "Le pack de 2 boxers est à 99 DH.",
+    a: "Le pack de 2 boxers premium THE AVIATOR est à 99 DH.",
   },
   {
     icon: Truck,
@@ -44,6 +44,11 @@ const FAQ_ITEMS = [
     icon: CreditCard,
     q: "Comment puis-je payer ma commande ?",
     a: "Le paiement se fait à la livraison (paiement en espèces).",
+  },
+  {
+    icon: Truck,
+    q: "Puis-je retourner ou échanger mes boxers après réception ?",
+    a: "Pour des raisons d'hygiène et de protection de la santé (sous-vêtements), aucun retour ni échange n'est accepté une fois le colis réceptionné et payé auprès du livreur. Vous pouvez vérifier votre colis directement avec le livreur au moment de la livraison.",
   },
   {
     icon: MessageCircle,
@@ -102,12 +107,7 @@ export default function FAQ() {
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-4">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${idx === 0
-                          ? "bg-[#C7D400]/20 text-[#07132B]"
-                          : "bg-gray-100 text-[#0A1128]"
-                        }`}
-                    >
+                    <div className="w-10 h-10 rounded-full bg-gray-100 text-[#0A1128] flex items-center justify-center shrink-0 transition-colors">
                       <Icon className="h-5 w-5" />
                     </div>
                     <span className="font-heading text-base sm:text-lg font-bold text-[#0A1128]">

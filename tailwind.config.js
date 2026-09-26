@@ -67,7 +67,8 @@ accent: {
   			body: ['var(--font-body)'],
   			display: ['var(--font-display)'],
   			mono: ['var(--font-mono)'],
-  			serifLuxury: ["'Cormorant Garamond'", "'Playfair Display'", 'Georgia', 'serif'],
+  			serif: ["'Playfair Display'", "'DM Serif Display'", 'Georgia', 'serif'],
+  			serifLuxury: ["'Playfair Display'", "'DM Serif Display'", 'Georgia', 'serif'],
   			script: ["'Caveat'", 'cursive'],
   		},
   		keyframes: {

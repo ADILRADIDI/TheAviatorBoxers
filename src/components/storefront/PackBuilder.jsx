@@ -43,9 +43,12 @@ export default function PackBuilder({ pieces, colorOptions, sizeOptions, onChang
                   >
                     <span
                       className="h-7 w-7 rounded-full"
-                      style={c.hex ? { backgroundColor: c.hex } : undefined}
+                      style={c.bicolor || c.hex2
+                        ? { background: `linear-gradient(135deg, ${c.hex} 50%, ${c.hex2 || '#FFFFFF'} 50%)` }
+                        : c.hex ? { backgroundColor: c.hex } : undefined
+                      }
                     >
-                      {!c.hex && <span className="block h-7 w-7 rounded-full bg-foreground/10" />}
+                      {!c.hex && !c.hex2 && <span className="block h-7 w-7 rounded-full bg-foreground/10" />}
                     </span>
                     {active && <Check className="absolute h-4 w-4 text-navy drop-shadow" aria-hidden="true" />}
                   </button>

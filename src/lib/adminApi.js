@@ -71,7 +71,7 @@ function getInitialMockDb() {
         slug: "aviator-essential-navy",
         price: 99,
         originalPrice: 150,
-        description: "Pack signature de 2 boxers en coton peigné stretch (95% coton / 5% élasthanne). Choix libre des 2 couleurs.",
+        description: "Pack signature de 2 boxers en coton compact stretch (95% coton / 5% élasthanne). Choix libre des 2 couleurs.",
         color_name: "5 Coloris au choix",
         active: true,
         category: "Packs",
@@ -189,9 +189,10 @@ function getInitialMockDb() {
       facebook: "https://web.facebook.com/profile.php?id=61592505372934",
       hero_price: "99 DH",
       hero_badge: "PACK DE 2 À 99 DH",
-      google_analytics_id: "G-XXXXXXXXXX",
+      google_analytics_id: "G-NST40JYCB7",
+      google_stream_id: "15844671059",
       google_tag_manager_id: "",
-      google_account_email: "boss@theaviatorboxer.com",
+      google_account_email: "social@theaviatorboxer.com",
       meta_pixel_id: "",
       tiktok_pixel_id: "",
     },
@@ -205,7 +206,16 @@ function loadMockDb() {
     const raw = localStorage.getItem(MOCK_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") return parsed;
+      if (parsed && typeof parsed === "object") {
+        if (!parsed.settings) parsed.settings = {};
+        if (!parsed.settings.google_analytics_id || parsed.settings.google_analytics_id.includes("XXXXXXXXXX")) {
+          parsed.settings.google_analytics_id = "G-NST40JYCB7";
+        }
+        if (!parsed.settings.google_stream_id) {
+          parsed.settings.google_stream_id = "15844671059";
+        }
+        return parsed;
+      }
     }
   } catch (e) {
     console.warn("Failed to parse mock db from localStorage:", e);
@@ -218,6 +228,12 @@ function loadMockDb() {
 function saveMockDb(db) {
   try {
     localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(db));
+    if (Array.isArray(db.colors)) {
+      localStorage.setItem("aviator_colors_cache", JSON.stringify(db.colors));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("aviator-colors-updated", { detail: db.colors }));
+      }
+    }
   } catch (e) {
     console.warn("Failed to save mock db to localStorage:", e);
   }
@@ -453,11 +469,29 @@ function handleMockRequest(path, options = {}) {
     }
   }
 
-  // Colors
+  // Colors (Public)
+  if (cleanPath === "/api/colors") {
+    return (db.colors || []).filter(c => c.active !== false).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }
+
+  // Colors (Admin)
   if (cleanPath === "/api/admin/colors") {
-    if (method === "GET") return db.colors;
+    if (method === "GET") {
+      return (db.colors || []).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
     if (method === "POST") {
-      const newCol = { id: "col-" + Date.now(), ...body, active: true, sortOrder: Number(body.sortOrder) || db.colors.length + 1 };
+      const newCol = {
+        id: "col-" + Date.now(),
+        name: body.name?.trim() || "Nouvelle couleur",
+        displayName: body.displayName?.trim() || body.name?.trim() || "Nouvelle couleur",
+        hex: body.hex?.trim() || "#111111",
+        hex2: body.hex2?.trim() || null,
+        bicolor: Boolean(body.bicolor || body.hex2),
+        code: (body.name || "COL").toUpperCase().replace(/[^A-Z0-9]/g, "_"),
+        active: body.active !== false,
+        sortOrder: Number(body.sortOrder) || (db.colors || []).length + 1,
+      };
+      if (!db.colors) db.colors = [];
       db.colors.push(newCol);
       saveMockDb(db);
       return newCol;
@@ -465,13 +499,21 @@ function handleMockRequest(path, options = {}) {
   }
 
   if (cleanPath.startsWith("/api/admin/colors/")) {
-    const id = cleanPath.replace("/api/admin/colors/", "");
-    const idx = db.colors.findIndex(c => String(c.id) === id || String(c.name).toLowerCase() === id.toLowerCase());
+    const rawId = cleanPath.replace("/api/admin/colors/", "");
+    const id = decodeURIComponent(rawId);
+    const idx = (db.colors || []).findIndex(c => String(c.id) === id || String(c.name).toLowerCase() === id.toLowerCase());
     if (method === "PATCH") {
       if (idx !== -1) {
-        db.colors[idx] = { ...db.colors[idx], ...body };
+        db.colors[idx] = {
+          ...db.colors[idx],
+          ...body,
+          displayName: body.displayName !== undefined ? body.displayName : (body.name || db.colors[idx].displayName || db.colors[idx].name),
+          bicolor: body.bicolor !== undefined ? body.bicolor : (Boolean(body.hex2 || db.colors[idx].hex2))
+        };
       } else {
-        db.colors.push({ id, ...body });
+        const created = { id, ...body, active: body.active !== false };
+        if (!db.colors) db.colors = [];
+        db.colors.push(created);
       }
       saveMockDb(db);
       return db.colors[idx] || { id, ...body };
@@ -787,11 +829,17 @@ function handleMockRequest(path, options = {}) {
   }
 
   // Settings
-  if (cleanPath === "/api/admin/settings") {
+  if (cleanPath === "/api/admin/settings" || cleanPath === "/api/settings") {
     if (method === "GET") return db.settings;
     if (method === "PUT" || method === "PATCH") {
       db.settings = { ...db.settings, ...body };
       saveMockDb(db);
+      try {
+        localStorage.setItem("aviator_site_settings", JSON.stringify(db.settings));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("aviator-settings-updated", { detail: db.settings }));
+        }
+      } catch {}
       return db.settings;
     }
   }
@@ -935,7 +983,16 @@ export async function adminRequest(path, options = {}) {
       return handleMockRequest(path, options);
     }
 
-    return await response.json();
+    const result = await response.json();
+    if (path.includes("/settings") && (options.method === "PUT" || options.method === "PATCH")) {
+      try {
+        localStorage.setItem("aviator_site_settings", JSON.stringify(result));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("aviator-settings-updated", { detail: result }));
+        }
+      } catch {}
+    }
+    return result;
   } catch (err) {
     if (isAuthLogin) {
       // If it's explicitly an auth error from a responding API, throw it directly

@@ -347,15 +347,15 @@ export default function PourquoiNous() {
         </div>
 
         {/* Feature Ribbon */}
-        <div className="relative z-10 border-t border-white/10 bg-[#050e1f] py-4 font-sans">
-          <div className="container-edge max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm font-semibold uppercase tracking-[0.18em] text-white/90 font-sans">
+        <div className="relative z-10 border-t border-white/10 bg-[#050e1f] py-3 sm:py-3.5 lg:py-4 font-sans overflow-x-auto no-scrollbar">
+          <div className="container-edge max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between flex-nowrap whitespace-nowrap min-w-max md:min-w-0 md:w-full gap-2 sm:gap-3 md:gap-1.5 lg:gap-3.5 xl:gap-4 text-[10px] sm:text-[11px] md:text-[11px] lg:text-xs xl:text-sm font-semibold uppercase tracking-[0.04em] sm:tracking-[0.08em] md:tracking-[0.05em] lg:tracking-[0.12em] xl:tracking-[0.16em] text-white/90 font-sans">
               {RIBBON_ITEMS.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2.5">
-                  <item.icon className="h-5 w-5 text-[#C7D400]" />
-                  <span>{item.label}</span>
+                <div key={idx} className="flex items-center gap-1.5 sm:gap-2 lg:gap-2.5 shrink-0">
+                  <item.icon className="h-4 w-4 sm:h-4.5 sm:w-4.5 lg:h-5 lg:w-5 text-[#C7D400] shrink-0" />
+                  <span className="shrink-0">{item.label}</span>
                   {idx < RIBBON_ITEMS.length - 1 && (
-                    <span className="hidden md:inline-block text-[#C7D400] font-bold ml-3 mr-1">•</span>
+                    <span className="text-[#C7D400] font-bold ml-1.5 sm:ml-2 lg:ml-3 mr-0.5 sm:mr-1 shrink-0 select-none">•</span>
                   )}
                 </div>
               ))}
@@ -667,7 +667,7 @@ export default function PourquoiNous() {
                 </div>
                 <Link
                   to="/notre-boxer"
-                  className="bg-[#C7D400] hover:bg-[#6d8d00] text-[#07132B] font-bold px-8 py-4 rounded-sm flex items-center gap-2.5 transition-colors uppercase tracking-wider text-sm font-sans shadow-md hover:shadow-lg"
+                  className="bg-[#C7D400] hover:brightness-95 text-[#07132B] font-bold px-8 py-4 rounded-sm flex items-center gap-2.5 transition-all uppercase tracking-wider text-sm font-sans shadow-md hover:shadow-lg hover:scale-[1.01]"
                 >
                   COMPOSER MON PACK <ArrowRight className="h-5 w-5 stroke-[2.5]" />
                 </Link>

@@ -6,14 +6,14 @@ import { usePageMeta, useJsonLd, breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 export default function ShippingReturns() {
   const { t } = useLanguage();
-  usePageMeta({ title: "Livraison & retours — The Aviator", description: "Livraison 24-48h partout au Maroc avec paiement à la livraison. Retours sous 7 jours : échanges et remboursements simples via WhatsApp." });
+  usePageMeta({ title: "Livraison & retours — The Aviator", description: "Livraison 24-48h partout au Maroc avec paiement à la livraison. Vérification à la réception. Pour des raisons d'hygiène, aucun retour après remise du colis." });
   useJsonLd(breadcrumbJsonLd([{ name: "Accueil", url: SITE_URL }, { name: "Livraison & retours", url: `${SITE_URL}/livraison-retours` }]));
   return (
     <>
       <PageHeader
         eyebrow={t("Informations")}
         title={t("Livraison & Retours")}
-        subtitle={t("Tout ce qu'il faut savoir sur la livraison et les retours.")}
+        subtitle={t("Tout ce qu'il faut savoir sur la livraison, la vérification du colis et notre politique d'hygiène.")}
         image="/products/aviator-pack-duo.jpg"
       />
 
@@ -43,7 +43,7 @@ export default function ShippingReturns() {
               {[
                 { n: "1", t: "Commande", d: "Vous validez votre commande en ligne ou via WhatsApp." },
                 { n: "2", t: "Préparation", d: "Nous préparons et expédions votre colis sous 24h." },
-                { n: "3", t: "Livraison", d: "Le livreur vous contacte et vous remet le colis. Vous payez à la réception." },
+                { n: "3", t: "Livraison & Vérification", d: "Le livreur vous contacte et vous remet le colis. Vous vérifiez et payez à la réception." },
               ].map((step) => (
                 <div key={step.n}>
                   <div className="flex h-10 w-10 items-center justify-center bg-navy font-heading text-lg text-white">{step.n}</div>
@@ -54,21 +54,20 @@ export default function ShippingReturns() {
             </div>
           </section>
 
-          {/* Returns */}
+          {/* Returns & Hygiene Policy */}
           <section>
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center bg-foreground/[0.04] text-ink"><RefreshCw className="h-6 w-6" /></div>
-              <h2 className="font-heading text-2xl font-bold">{t("Retours & Échanges")}</h2>
+              <h2 className="font-heading text-2xl font-bold">{t("Politique de retour & hygiène")}</h2>
             </div>
             <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              <p>{t("Votre satisfaction est notre priorité. Si un produit ne vous convient pas, voici notre politique de retour :")}</p>
+              <p>{t("Pour des raisons d'hygiène et de protection de la santé liées à la nature des sous-vêtements, aucun retour ni échange ne peut être accepté une fois le colis réceptionné et réglé auprès du livreur.")}</p>
               <ul className="space-y-3">
-                <li className="flex items-start gap-3"><RefreshCw className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Délai de retour :")}</strong> {t("7 jours après réception du produit.")}</span></li>
-                <li className="flex items-start gap-3"><Package className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Condition :")}</strong> {t("Le produit doit être intact, non porté et dans son emballage d'origine.")}</span></li>
-                <li className="flex items-start gap-3"><RefreshCw className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Échange :")}</strong> {t("Échange possible pour une autre taille ou couleur, selon disponibilité.")}</span></li>
-                <li className="flex items-start gap-3"><Banknote className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Remboursement :")}</strong> {t("Remboursement possible en cas de défaut produit.")}</span></li>
+                <li className="flex items-start gap-3"><Package className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Vérification à la livraison :")}</strong> {t("Vous avez la possibilité de vérifier la conformité de votre commande (tailles, couleurs, état du colis) directement auprès du livreur avant le règlement.")}</span></li>
+                <li className="flex items-start gap-3"><RefreshCw className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Hygiène & sécurité :")}</strong> {t("Une fois la commande acceptée et remise par le livreur, aucun retour ni échange n'est possible.")}</span></li>
+                <li className="flex items-start gap-3"><Banknote className="mt-0.5 h-5 w-5 shrink-0 text-accent-lime" /><span><strong className="text-foreground">{t("Défaut de fabrication :")}</strong> {t("En cas de défaut avéré constaté dès la réception, contactez immédiatement notre service client sur WhatsApp avec photos pour une prise en charge rapide.")}</span></li>
               </ul>
-              <p className="mt-4 rounded border border-border bg-background p-4 text-xs">{t("Pour initier un retour, contactez-nous via WhatsApp en indiquant votre numéro de commande. Les frais de retour sont à la charge du client, sauf en cas de défaut produit.")}</p>
+              <p className="mt-4 rounded border border-border bg-background p-4 text-xs">{t("Notre équipe est à votre disposition sur WhatsApp pour vous conseiller sur le choix de votre taille et de vos couleurs avant toute validation de commande.")}</p>
             </div>
           </section>
         </div>
