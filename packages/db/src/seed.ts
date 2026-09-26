@@ -50,16 +50,20 @@ if (oldProducts.length > 0) {
 }
 
 const colorDefinitions = [
-  { name: "Noir", hex: "#111111", sortOrder: 1 },
-  { name: "Bleu marine", hex: "#07132B", sortOrder: 2 },
-  { name: "Bleu royal", hex: "#1b4d89", sortOrder: 3 },
-  { name: "Blanc", hex: "#FFFFFF", sortOrder: 4 },
-  { name: "Gris chiné", hex: "#8e9297", sortOrder: 5 },
-  { name: "Anthracite", hex: "#374151", sortOrder: 6 },
+  { name: "Noir Pilot", hex: "#111111", hex2: null, bicolor: false, border: false, sortOrder: 1 },
+  { name: "Marine Aviateur", hex: "#07132B", hex2: null, bicolor: false, border: false, sortOrder: 2 },
+  { name: "Bleu Altitude", hex: "#1b4d89", hex2: null, bicolor: false, border: false, sortOrder: 3 },
+  { name: "Blanc Cumulus", hex: "#FFFFFF", hex2: null, bicolor: false, border: true, sortOrder: 4 },
+  { name: "Gris Titanium", hex: "#8e9297", hex2: null, bicolor: false, border: false, sortOrder: 5 },
+  { name: "Bleu marine / bande blanche", hex: "#07132B", hex2: "#FFFFFF", bicolor: true, border: false, sortOrder: 6 },
 ];
 
+// Clean legacy colors not in definition
+const currentNames = colorDefinitions.map((c) => c.name);
+await db.delete(colors).where(sql`${colors.name} NOT IN (${sql.join(currentNames.map((n) => sql`${n}`), sql`, `)})`);
+
 for (const c of colorDefinitions) {
-  await db.insert(colors).values(c).onConflictDoUpdate({ target: colors.name, set: { hex: c.hex, sortOrder: c.sortOrder } });
+  await db.insert(colors).values(c).onConflictDoUpdate({ target: colors.name, set: { hex: c.hex, hex2: c.hex2, bicolor: c.bicolor, border: c.border, sortOrder: c.sortOrder } });
 }
 
 const productRows: any[] = [

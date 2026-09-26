@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: "Puis-je choisir les couleurs de mon pack ?",
-    a: "Oui ! Vous pouvez choisir 2 fois la même couleur ou combiner 2 couleurs différentes parmi toutes nos teintes disponibles (Noir, Bleu marine, Bleu royal, Blanc et Gris chiné).",
+    a: "Oui ! Vous pouvez choisir 2 fois la même couleur ou combiner 2 couleurs différentes parmi toutes nos teintes disponibles (Noir Pilot, Marine Aviateur, Bleu Altitude, Blanc Cumulus, Gris Titanium et Bleu marine / bande blanche).",
   },
   {
     q: "Comment choisir ma taille ?",

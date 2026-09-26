@@ -22,7 +22,7 @@ function getTrackerId(envKey, settingKey) {
         return val.trim();
       }
     }
-    const adminRaw = localStorage.getItem("aviator_admin_clean_v4");
+    const adminRaw = localStorage.getItem("aviator_admin_clean_v6") || localStorage.getItem("aviator_admin_clean_v5");
     if (adminRaw) {
       const parsed = JSON.parse(adminRaw);
       const val = parsed?.settings?.[settingKey];

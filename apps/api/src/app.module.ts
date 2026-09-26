@@ -577,17 +577,39 @@ class AppController {
   async adminColors(@Query() query: any) { return listPage(await db.select().from(colors).orderBy(colors.sortOrder), query); }
 
   @Post("api/admin/colors")
-  async createColor(@Body() body: { name: string; hex: string; sortOrder?: number }) {
-    const [row] = await db.insert(colors).values({ name: body.name, hex: body.hex, sortOrder: body.sortOrder ?? 0 }).returning();
+  async createColor(@Body() body: { name: string; hex: string; hex2?: string; bicolor?: boolean; border?: boolean; sortOrder?: number; active?: boolean }) {
+    const [row] = await db
+      .insert(colors)
+      .values({
+        name: body.name.trim(),
+        hex: body.hex.trim(),
+        hex2: body.hex2?.trim() || null,
+        bicolor: Boolean(body.bicolor || body.hex2),
+        border: Boolean(body.border || body.hex?.toLowerCase() === "#ffffff" || body.hex?.toLowerCase() === "#fff"),
+        sortOrder: body.sortOrder ?? 0,
+        active: body.active !== false,
+      })
+      .returning();
+    await audit("color.created", "color", row.id, { name: row.name });
     return row;
   }
 
   @Patch("api/admin/colors/:id")
-  async updateColor(@Param("id") id: string, @Body() body: { name?: string; hex?: string; active?: boolean; sortOrder?: number }) {
+  async updateColor(@Param("id") id: string, @Body() body: any) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const updateData: any = {};
+    if (body.name !== undefined) updateData.name = body.name.trim();
+    if (body.hex !== undefined) updateData.hex = body.hex.trim();
+    if (body.hex2 !== undefined) updateData.hex2 = body.hex2?.trim() || null;
+    if (body.bicolor !== undefined) updateData.bicolor = Boolean(body.bicolor);
+    if (body.border !== undefined) updateData.border = Boolean(body.border);
+    if (body.sortOrder !== undefined) updateData.sortOrder = Number(body.sortOrder);
+    if (body.active !== undefined) updateData.active = Boolean(body.active);
+
     const [row] = isUuid
-      ? await db.update(colors).set(body).where(eq(colors.id, id)).returning()
-      : await db.update(colors).set(body).where(eq(colors.name, id)).returning();
+      ? await db.update(colors).set(updateData).where(eq(colors.id, id)).returning()
+      : await db.update(colors).set(updateData).where(eq(colors.name, id)).returning();
+    if (row) await audit("color.updated", "color", row.id, { name: row.name });
     return row;
   }
 
@@ -599,6 +621,7 @@ class AppController {
     } else {
       await db.delete(colors).where(eq(colors.name, id)); 
     }
+    await audit("color.deleted", "color", id);
     return { ok: true }; 
   }
 

@@ -120,7 +120,7 @@ export async function fetchSiteSettings() {
           cachedSettings = { ...DEFAULT_SITE_SETTINGS, ...JSON.parse(siteRaw) };
           return cachedSettings;
         }
-        const adminRaw = localStorage.getItem("aviator_admin_clean_v4");
+        const adminRaw = localStorage.getItem("aviator_admin_clean_v5") || localStorage.getItem("aviator_admin_clean_v4");
         if (adminRaw) {
           const parsed = JSON.parse(adminRaw);
           if (parsed?.settings) {
@@ -213,12 +213,12 @@ export async function fetchProductBySlug(slug) {
 }
 
 export const FALLBACK_COLORS = [
-  { name: "Noir", displayName: "Noir Pilot", hex: "#111111" },
-  { name: "Bleu marine", displayName: "Marine Aviateur", hex: "#07132B" },
-  { name: "Bleu royal", displayName: "Bleu Altitude", hex: "#1b4d89" },
-  { name: "Blanc", displayName: "Blanc Cumulus", hex: "#FFFFFF", border: true },
-  { name: "Gris chiné", displayName: "Gris Titanium", hex: "#8e9297" },
-  { name: "Bleu marine / bande blanche", displayName: "Bleu marine / bande blanche", hex: "#07132B", hex2: "#FFFFFF", bicolor: true },
+  { id: "col-1", name: "Noir Pilot", displayName: "Noir Pilot", hex: "#111111" },
+  { id: "col-2", name: "Marine Aviateur", displayName: "Marine Aviateur", hex: "#07132B" },
+  { id: "col-3", name: "Bleu Altitude", displayName: "Bleu Altitude", hex: "#1b4d89" },
+  { id: "col-4", name: "Blanc Cumulus", displayName: "Blanc Cumulus", hex: "#FFFFFF", border: true },
+  { id: "col-5", name: "Gris Titanium", displayName: "Gris Titanium", hex: "#8e9297" },
+  { id: "col-6", name: "Bleu marine / bande blanche", displayName: "Bleu marine / bande blanche", hex: "#07132B", hex2: "#FFFFFF", bicolor: true },
 ];
 
 export const FALLBACK_REVIEWS = [
@@ -251,28 +251,36 @@ export const FALLBACK_REVIEWS = [
   },
 ];
 
+const LEGACY_COLOR_NAMES = new Set([
+  "noir",
+  "bleu marine",
+  "bleu royal",
+  "blanc",
+  "gris chiné",
+  "gris chine",
+  "anthracite",
+  "bleu marine / bande blanc",
+]);
+
 export async function fetchColors() {
   try {
-    const res = await api("/api/colors", { timeout: 600 });
+    const res = await api("/api/colors", { timeout: 800 });
     if (Array.isArray(res) && res.length > 0) {
-      return res.filter((c) => c.active !== false);
+      const activeOnly = res.filter((c) => c.active !== false);
+      if (activeOnly.length > 0) return activeOnly;
     }
   } catch {}
 
   // Check cached colors or active admin mock database
   try {
-    const cacheStr = localStorage.getItem("aviator_colors_cache");
+    const cacheStr = localStorage.getItem("aviator_colors_cache_v6");
     if (cacheStr) {
       const parsed = JSON.parse(cacheStr);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.filter((c) => c.active !== false);
-      }
-    }
-    const mockStr = localStorage.getItem("aviator_admin_clean_v4");
-    if (mockStr) {
-      const mockDb = JSON.parse(mockStr);
-      if (Array.isArray(mockDb.colors) && mockDb.colors.length > 0) {
-        return mockDb.colors.filter((c) => c.active !== false);
+        const hasLegacy = parsed.some((c) => LEGACY_COLOR_NAMES.has(String(c.name || "").trim().toLowerCase()) || String(c.name || "").toLowerCase().endsWith("bande blanc"));
+        if (!hasLegacy) {
+          return parsed.filter((c) => c.active !== false);
+        }
       }
     }
   } catch {}
@@ -280,11 +288,25 @@ export async function fetchColors() {
   return FALLBACK_COLORS;
 }
 
+// Self-healing migration on boot to clean stale caches in browser
 if (typeof window !== "undefined") {
+  try {
+    const legacyKeys = [
+      "aviator_admin_clean_v5",
+      "aviator_admin_clean_v4",
+      "aviator_admin_mock_db_v4",
+      "aviator_admin_mock_db_v3",
+      "aviator_colors_cache_v5",
+      "aviator_colors_cache",
+    ];
+    legacyKeys.forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem("aviator_colors_cache_v6", JSON.stringify(FALLBACK_COLORS));
+  } catch {}
+
   window.addEventListener("aviator-colors-updated", (event) => {
     if (event.detail && Array.isArray(event.detail)) {
       try {
-        localStorage.setItem("aviator_colors_cache", JSON.stringify(event.detail));
+        localStorage.setItem("aviator_colors_cache_v6", JSON.stringify(event.detail));
       } catch {}
     }
   });

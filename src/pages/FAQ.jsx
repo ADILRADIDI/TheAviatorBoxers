@@ -28,7 +28,7 @@ const FAQ_ITEMS = [
   {
     icon: Palette,
     q: "Puis-je choisir les couleurs de mon pack ?",
-    a: "Oui, vous êtes totalement libre de choisir les couleurs de votre pack : 2 boxers de la même couleur ou 2 couleurs différentes parmi toutes nos teintes disponibles (Noir, Bleu marine, Bleu royal, Blanc et Gris chiné). Vous pouvez également choisir une taille différente pour chaque boxer.",
+    a: "Oui, vous êtes totalement libre de choisir les couleurs de votre pack : 2 boxers de la même couleur ou 2 couleurs différentes parmi toutes nos teintes disponibles (Noir Pilot, Marine Aviateur, Bleu Altitude, Blanc Cumulus, Gris Titanium et Bleu marine / bande blanche). Vous pouvez également choisir une taille différente pour chaque boxer.",
   },
   {
     icon: Coins,

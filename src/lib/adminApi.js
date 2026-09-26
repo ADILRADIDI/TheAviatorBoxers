@@ -44,7 +44,7 @@ const SYSTEM_PERMISSIONS = [
 ];
 
 // Initial Mock Store Data
-const MOCK_STORAGE_KEY = "aviator_admin_clean_v4";
+const MOCK_STORAGE_KEY = "aviator_admin_clean_v6";
 
 function getInitialMockDb() {
   return {
@@ -72,7 +72,7 @@ function getInitialMockDb() {
         price: 99,
         originalPrice: 150,
         description: "Pack signature de 2 boxers en coton compact stretch (95% coton / 5% élasthanne). Choix libre des 2 couleurs.",
-        color_name: "5 Coloris au choix",
+        color_name: "6 Coloris au choix",
         active: true,
         category: "Packs",
         stock: 450,
@@ -91,21 +91,22 @@ function getInitialMockDb() {
       { id: "cat-3", name: "Accessoires", nameFr: "Accessoires", nameDarija: "إكسسوارات", slug: "accessoires", active: true, productsCount: 0 }
     ],
     colors: [
-      { id: "col-1", name: "Noir", nameFr: "Noir", nameDarija: "كحل", hex: "#111111", code: "NOIR", active: true, sortOrder: 1 },
-      { id: "col-2", name: "Bleu marine", nameFr: "Bleu marine", nameDarija: "كحلي", hex: "#07132B", code: "NAVY", active: true, sortOrder: 2 },
-      { id: "col-3", name: "Bleu royal", nameFr: "Bleu royal", nameDarija: "أزرق ملكي", hex: "#1b4d89", code: "ROYAL", active: true, sortOrder: 3 },
-      { id: "col-4", name: "Blanc", nameFr: "Blanc", nameDarija: "بيض", hex: "#FFFFFF", code: "BLANC", active: true, sortOrder: 4 },
-      { id: "col-5", name: "Gris chiné", nameFr: "Gris chiné", nameDarija: "رمادي", hex: "#8e9297", code: "GRIS", active: true, sortOrder: 5 },
-      { id: "col-6", name: "Anthracite", nameFr: "Anthracite", nameDarija: "فحمي", hex: "#374151", code: "ANTHRACITE", active: true, sortOrder: 6 },
+      { id: "col-1", name: "Noir Pilot", nameFr: "Noir Pilot", nameDarija: "كحل بايلوت", hex: "#111111", code: "NOIR", active: true, sortOrder: 1 },
+      { id: "col-2", name: "Marine Aviateur", nameFr: "Marine Aviateur", nameDarija: "مارين أفياتور", hex: "#07132B", code: "NAVY", active: true, sortOrder: 2 },
+      { id: "col-3", name: "Bleu Altitude", nameFr: "Bleu Altitude", nameDarija: "أزرق ألتيتود", hex: "#1b4d89", code: "ROYAL", active: true, sortOrder: 3 },
+      { id: "col-4", name: "Blanc Cumulus", nameFr: "Blanc Cumulus", nameDarija: "أبيض كيومولوس", hex: "#FFFFFF", border: true, code: "BLANC", active: true, sortOrder: 4 },
+      { id: "col-5", name: "Gris Titanium", nameFr: "Gris Titanium", nameDarija: "رمادي تيتانيوم", hex: "#8e9297", code: "GRIS", active: true, sortOrder: 5 },
+      { id: "col-6", name: "Bleu marine / bande blanche", nameFr: "Bleu marine / bande blanche", nameDarija: "كحلي بحزام أبيض", hex: "#07132B", hex2: "#FFFFFF", bicolor: true, code: "NAVY_WHITE", active: true, sortOrder: 6 },
     ],
     variants: [
-      { id: "var-1", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir", color_name: "Noir", size: "M", sku: "AV-PK-BK-M", stock: 85, price: 99, lowStockThreshold: 15, active: true },
-      { id: "var-2", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir", color_name: "Noir", size: "L", sku: "AV-PK-BK-L", stock: 110, price: 99, lowStockThreshold: 15, active: true },
-      { id: "var-3", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir", color_name: "Noir", size: "XL", sku: "AV-PK-BK-XL", stock: 65, price: 99, lowStockThreshold: 15, active: true },
-      { id: "var-4", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Bleu marine", color_name: "Bleu marine", size: "L", sku: "AV-PK-NV-L", stock: 95, price: 99, lowStockThreshold: 15, active: true },
-      { id: "var-5", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Bleu royal", color_name: "Bleu royal", size: "M", sku: "AV-PK-RY-M", stock: 48, price: 99, lowStockThreshold: 15, active: true },
-      { id: "var-6", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Blanc", color_name: "Blanc", size: "L", sku: "AV-PK-WH-L", stock: 52, price: 99, lowStockThreshold: 15, active: true },
-      { id: "var-7", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Gris chiné", color_name: "Gris chiné", size: "XL", sku: "AV-PK-GR-XL", stock: 35, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-1", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir Pilot", color_name: "Noir Pilot", size: "M", sku: "AV-PK-BK-M", stock: 85, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-2", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir Pilot", color_name: "Noir Pilot", size: "L", sku: "AV-PK-BK-L", stock: 110, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-3", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Noir Pilot", color_name: "Noir Pilot", size: "XL", sku: "AV-PK-BK-XL", stock: 65, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-4", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Marine Aviateur", color_name: "Marine Aviateur", size: "L", sku: "AV-PK-NV-L", stock: 95, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-5", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Bleu Altitude", color_name: "Bleu Altitude", size: "M", sku: "AV-PK-RY-M", stock: 48, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-6", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Blanc Cumulus", color_name: "Blanc Cumulus", size: "L", sku: "AV-PK-WH-L", stock: 52, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-7", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Gris Titanium", color_name: "Gris Titanium", size: "XL", sku: "AV-PK-GR-XL", stock: 35, price: 99, lowStockThreshold: 15, active: true },
+      { id: "var-8", productId: "prod-1", productName: "Pack 2 Boxers THE AVIATOR", color: "Bleu marine / bande blanche", color_name: "Bleu marine / bande blanche", size: "L", sku: "AV-PK-NB-L", stock: 60, price: 99, lowStockThreshold: 15, active: true },
     ],
     inventoryMovements: [],
     shippingZones: [
@@ -201,6 +202,17 @@ function getInitialMockDb() {
   };
 }
 
+const LEGACY_COLOR_NAMES = new Set([
+  "noir",
+  "bleu marine",
+  "bleu royal",
+  "blanc",
+  "gris chiné",
+  "gris chine",
+  "anthracite",
+  "bleu marine / bande blanc",
+]);
+
 function loadMockDb() {
   try {
     const raw = localStorage.getItem(MOCK_STORAGE_KEY);
@@ -214,6 +226,18 @@ function loadMockDb() {
         if (!parsed.settings.google_stream_id) {
           parsed.settings.google_stream_id = "15844671059";
         }
+        // Force refresh colors if any legacy name or missing colors
+        const initial = getInitialMockDb();
+        const hasLegacy =
+          !Array.isArray(parsed.colors) ||
+          parsed.colors.length < 6 ||
+          parsed.colors.some((c) => LEGACY_COLOR_NAMES.has(String(c.name || "").trim().toLowerCase()));
+
+        if (hasLegacy) {
+          parsed.colors = initial.colors;
+          parsed.variants = initial.variants;
+        }
+        saveMockDb(parsed);
         return parsed;
       }
     }
@@ -229,7 +253,7 @@ function saveMockDb(db) {
   try {
     localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(db));
     if (Array.isArray(db.colors)) {
-      localStorage.setItem("aviator_colors_cache", JSON.stringify(db.colors));
+      localStorage.setItem("aviator_colors_cache_v5", JSON.stringify(db.colors));
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("aviator-colors-updated", { detail: db.colors }));
       }

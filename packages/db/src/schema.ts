@@ -85,6 +85,9 @@ export const colors = pgTable("colors", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull().unique(),
   hex: text("hex").notNull(),
+  hex2: text("hex2"),
+  bicolor: boolean("bicolor").notNull().default(false),
+  border: boolean("border").notNull().default(false),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
 });

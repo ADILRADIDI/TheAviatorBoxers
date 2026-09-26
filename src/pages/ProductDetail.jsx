@@ -32,13 +32,18 @@ const PRODUCT_IMAGES = [
 ];
 
 const COLOR_IMAGE_MAP = {
+  "Marine Aviateur": 0,
   "Bleu marine": 0,
+  "Noir Pilot": 1,
   "Noir": 1,
+  "Blanc Cumulus": 2,
   "Blanc": 2,
+  "Bleu Altitude": 3,
   "Bleu royal": 3,
+  "Gris Titanium": 4,
   "Gris chiné": 4,
-  "Bleu marine / bande blanche": 0,
   "Bleu marine / bande blanc": 0,
+  "Bleu marine / bande blanche": 0,
 };
 
 const DEFAULT_SIZES = ["M", "L", "XL", "XXL"];
@@ -51,9 +56,9 @@ export default function ProductDetail() {
   const [selectedGlobalSize, setSelectedGlobalSize] = useState("L");
 
   // Independent color & size selection for Boxer 1 and Boxer 2
-  const [boxer1Color, setBoxer1Color] = useState("Bleu marine");
+  const [boxer1Color, setBoxer1Color] = useState("Marine Aviateur");
   const [boxer1Size, setBoxer1Size] = useState("L");
-  const [boxer2Color, setBoxer2Color] = useState("Blanc");
+  const [boxer2Color, setBoxer2Color] = useState("Blanc Cumulus");
   const [boxer2Size, setBoxer2Size] = useState("L");
 
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
